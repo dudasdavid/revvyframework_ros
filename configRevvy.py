@@ -1,7 +1,6 @@
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.commands import *
 import time
-from revvy.robot.ports.motor import create_motor_port_handler
 
 class RevvyControl:
     def __init__(self, transport: RevvyTransport):
