@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.insert(0, "~/catkin_ws/src/revvyframework_ros/scipts")
+
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
 import time
+
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
