@@ -1,0 +1,18 @@
+{"robotConfig":
+    {
+        "sensors":[
+            {},
+            {},
+            {},
+            {"name":"distance","type":1}
+        ],
+        "motors":[
+            {"reversed":0,"name":"drive1","type":2,"side":0},
+            {},
+            {"reversed":1,"name":"motor3","type":1,"side":1},
+            {"reversed":0,"name":"drive4","type":2,"side":1},
+            {},
+            {}
+        ]
+    }
+}
