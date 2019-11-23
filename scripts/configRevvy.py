@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+
 sys.path.insert(0, "~/catkin_ws/src/revvyframework_ros/scipts")
 
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
@@ -10,24 +11,23 @@ import time
 import rospy
 from std_msgs.msg import String
 
-
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
-    'RevvyMotor':    {
+    'RevvyMotor': {
         'driver': 'DcMotor',
         'config': {
-            'speed_controller':    [1 / 37.5, 0.3, 0, -100, 100],
+            'speed_controller': [1 / 37.5, 0.3, 0, -100, 100],
             'position_controller': [10, 0, 0, -900, 900],
-            'position_limits':     [0, 0],
-            'encoder_resolution':  1536
+            'position_limits': [0, 0],
+            'encoder_resolution': 1536
         }
     },
     'RevvyMotor_CCW': {
         'driver': 'DcMotor',
         'config': {
-            'speed_controller':    [1 / 37.5, 0.3, 0, -100, 100],
+            'speed_controller': [1 / 37.5, 0.3, 0, -100, 100],
             'position_controller': [10, 0, 0, -900, 900],
-            'position_limits':     [0, 0],
+            'position_limits': [0, 0],
             'encoder_resolution': -1536
         }
     }
@@ -35,8 +35,8 @@ Motors = {
 
 Sensors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
-    'HC_SR04':       {'driver': 'HC_SR04', 'config': {}},
-    'BumperSwitch':  {'driver': 'BumperSwitch', 'config': {}},
+    'HC_SR04': {'driver': 'HC_SR04', 'config': {}},
+    'BumperSwitch': {'driver': 'BumperSwitch', 'config': {}},
 }
 
 port_config = Motors["RevvyMotor"]["config"]
@@ -52,25 +52,34 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 
 print(config)
 
-drivetrainMotors = [1,1,1,2,2,2] # set all to drivetrain LEFT = 1, RIGHT = 2
+drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
 
 def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-    if (data.data == "None"):
+    if data.data == "None":
         robot_control.set_drivetrain_speed(0, 0)
+    elif data.data == "Up":
+        robot_control.set_drivetrain_speed(20, 20)
+    elif data.data == "Down":
+        robot_control.set_drivetrain_speed(-20, -20)
+    elif data.data == "Left":
+        robot_control.set_drivetrain_speed(-20, 20)
+    elif data.data == "Right":
+        robot_control.set_drivetrain_speed(20, -20)
     else:
-        robot_control.set_drivetrain_speed(10, 10)
-    #robot_control.ping()
+        robot_control.set_drivetrain_speed(0, 0)
+
+    # robot_control.ping()
 
 
 def listener():
-
     rospy.init_node('listener', anonymous=True)
 
     rospy.Subscriber('chatter', String, callback)
 
     rospy.spin()
+
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
@@ -79,9 +88,9 @@ with RevvyTransportI2C() as transport:
     print(robot_control.get_motor_port_amount())
     print(robot_control.get_sensor_port_amount())
 
-    #robot_control.set_master_status(3) # Set master LED green and monitoring communication
+    # robot_control.set_master_status(3) # Set master LED green and monitoring communication
 
-    robot_control.set_motor_port_type(1,1) # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
+    robot_control.set_motor_port_type(1, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(1, config)
 
     robot_control.set_motor_port_type(4, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
@@ -90,11 +99,11 @@ with RevvyTransportI2C() as transport:
     robot_control.set_motor_port_type(5, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(5, config)
 
-    robot_control.configure_drivetrain(1, drivetrainMotors) # DIFFERENTIAL = 1
+    robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
-    #robot_control.set_drivetrain_speed(10,10)
+    # robot_control.set_drivetrain_speed(10,10)
 
-    #while True:
+    # while True:
     #    robot_control.ping()
     #    time.sleep(0.02)
 
