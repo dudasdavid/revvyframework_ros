@@ -5,7 +5,26 @@ import traceback
 from abc import ABC
 from collections import namedtuple
 
+from revvy.version import Version, FormatError
 from revvy.mcu.rrrc_transport import RevvyTransport, Response, ResponseHeader
+
+
+def split(data, chunk_size):
+    """
+    >>> list(split([], 5))
+    []
+    >>> list(split(b'apple', 5))
+    [b'apple']
+    >>> list(split(b'apple', 7))
+    [b'apple']
+    >>> list(split([1, 2, 3, 4], 2))
+    [[1, 2], [3, 4]]
+    >>> list(split([1, 2, 3, 4, 5], 2))
+    [[1, 2], [3, 4], [5]]
+    >>> list(split(b'apple', 3))
+    [b'app', b'le']
+    """
+    return (data[i:i + chunk_size] for i in range(0, len(data), chunk_size))
 
 
 class UnknownCommandError(Exception):
@@ -64,6 +83,13 @@ class PingCommand(Command):
     @property
     def command_id(self): return 0x00
 
+
+class ReadVersionCommand(Command, ABC):
+    def parse_response(self, payload):
+        try:
+            return Version(parse_string(payload))
+        except (UnicodeDecodeError, FormatError):
+            return None
 
 
 class ReadHardwareVersionCommand(ReadVersionCommand):
@@ -309,7 +335,7 @@ class ErrorMemory_ReadErrors(Command):
         return self._send(start_idx.to_bytes(4, byteorder='little'))
 
     def parse_response(self, payload):
-        return payload
+        return list(split(payload, 63))
 
 
 class ErrorMemory_Clear(Command):
