@@ -1,34 +1,6 @@
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
-from revvy.mcu.commands import *
+from revvy.mcu.rrrc_control import *
 import time
-
-class RevvyControl:
-    def __init__(self, transport: RevvyTransport):
-        self.ping = PingCommand(transport)
-
-        self.set_master_status = SetMasterStatusCommand(transport)
-
-        self.get_hardware_version = ReadHardwareVersionCommand(transport)
-        self.get_firmware_version = ReadFirmwareVersionCommand(transport)
-
-        self.get_motor_port_amount = ReadMotorPortAmountCommand(transport)
-        self.get_motor_port_types = ReadMotorPortTypesCommand(transport)
-        self.set_motor_port_type = SetMotorPortTypeCommand(transport)
-        self.set_motor_port_config = SetMotorPortConfigCommand(transport)
-        self.set_motor_port_control_value = SetMotorPortControlCommand(transport)
-        self.get_motor_position = ReadMotorPortStatusCommand(transport)
-
-        self.configure_drivetrain = ConfigureDrivetrain(transport)
-        self.set_drivetrain_position = RequestDifferentialDriveTrainPositionCommand(transport)
-        self.set_drivetrain_speed = RequestDifferentialDriveTrainSpeedCommand(transport)
-        self.drivetrain_turn = RequestDifferentialDriveTrainTurnCommand(transport)
-
-        self.get_sensor_port_amount = ReadSensorPortAmountCommand(transport)
-        self.get_sensor_port_types = ReadSensorPortTypesCommand(transport)
-        self.set_sensor_port_type = SetSensorPortTypeCommand(transport)
-        self.set_sensor_port_config = SetSensorPortConfigCommand(transport)
-        self.get_sensor_port_value = ReadSensorPortStatusCommand(transport)
-
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
@@ -71,6 +43,8 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 
 print(config)
 
+drivetrainMotors = [1,1,1,2,2,2] # set all to drivetrain LEFT = 1, RIGHT = 2
+
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
 
@@ -78,11 +52,20 @@ with RevvyTransportI2C() as transport:
     print(robot_control.get_motor_port_amount())
     print(robot_control.get_sensor_port_amount())
 
-    robot_control.set_master_status(3)
+    robot_control.set_master_status(3) # Set master LED green and monitoring communication
 
+    robot_control.set_motor_port_type(1,1) # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
+    robot_control.set_motor_port_config(1, config)
 
-    robot_control.set_motor_port_type(4,1)
+    robot_control.set_motor_port_type(4, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(4, config)
+
+    robot_control.set_motor_port_type(5, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
+    robot_control.set_motor_port_config(5, config)
+
+    robot_control.configure_drivetrain(1, drivetrainMotors) # DIFFERENTIAL = 1
+
+    robot_control.set_drivetrain_speed(10,10)
 
     while True:
         robot_control.ping()
