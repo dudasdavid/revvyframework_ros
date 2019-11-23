@@ -57,8 +57,8 @@ drivetrainMotors = [1,1,1,2,2,2] # set all to drivetrain LEFT = 1, RIGHT = 2
 
 def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-    #robot_control.set_drivetrain_speed(10, 10)
-    robot_control.ping()
+    robot_control.set_drivetrain_speed(10, 10)
+    #robot_control.ping()
 
 
 def listener():
@@ -76,7 +76,7 @@ with RevvyTransportI2C() as transport:
     print(robot_control.get_motor_port_amount())
     print(robot_control.get_sensor_port_amount())
 
-    robot_control.set_master_status(3) # Set master LED green and monitoring communication
+    #robot_control.set_master_status(3) # Set master LED green and monitoring communication
 
     robot_control.set_motor_port_type(1,1) # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(1, config)
