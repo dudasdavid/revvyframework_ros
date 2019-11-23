@@ -57,7 +57,10 @@ drivetrainMotors = [1,1,1,2,2,2] # set all to drivetrain LEFT = 1, RIGHT = 2
 
 def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-    robot_control.set_drivetrain_speed(10, 10)
+    if (data.data == "None"):
+        robot_control.set_drivetrain_speed(0, 0)
+    else:
+        robot_control.set_drivetrain_speed(10, 10)
     #robot_control.ping()
 
 
