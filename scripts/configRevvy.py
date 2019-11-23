@@ -7,6 +7,9 @@ from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
 import time
 
+import rospy
+from std_msgs.msg import String
+
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
@@ -51,6 +54,21 @@ print(config)
 
 drivetrainMotors = [1,1,1,2,2,2] # set all to drivetrain LEFT = 1, RIGHT = 2
 
+
+def callback(data):
+    rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
+    #robot_control.set_drivetrain_speed(10, 10)
+    robot_control.ping()
+
+
+def listener():
+
+    rospy.init_node('listener', anonymous=True)
+
+    rospy.Subscriber('chatter', String, callback)
+
+    rospy.spin()
+
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
 
@@ -71,8 +89,10 @@ with RevvyTransportI2C() as transport:
 
     robot_control.configure_drivetrain(1, drivetrainMotors) # DIFFERENTIAL = 1
 
-    robot_control.set_drivetrain_speed(10,10)
+    #robot_control.set_drivetrain_speed(10,10)
 
-    while True:
-        robot_control.ping()
-        time.sleep(0.02)
+    #while True:
+    #    robot_control.ping()
+    #    time.sleep(0.02)
+
+    listener()
