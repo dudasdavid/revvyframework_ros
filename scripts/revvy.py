@@ -60,13 +60,13 @@ def callback(data):
     if data.data == "None":
         robot_control.set_drivetrain_speed(0, 0)
     elif data.data == "Up":
-        robot_control.set_drivetrain_speed(100, -100)
+        robot_control.set_drivetrain_speed(500, -500)
     elif data.data == "Down":
-        robot_control.set_drivetrain_speed(-100, 100)
+        robot_control.set_drivetrain_speed(-500, 500)
     elif data.data == "Left":
-        robot_control.set_drivetrain_speed(-100, -100)
+        robot_control.set_drivetrain_speed(-500, -500)
     elif data.data == "Right":
-        robot_control.set_drivetrain_speed(100, 100)
+        robot_control.set_drivetrain_speed(500, 500)
     else:
         robot_control.set_drivetrain_speed(0, 0)
 
