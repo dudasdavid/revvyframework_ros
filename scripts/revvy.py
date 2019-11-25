@@ -60,13 +60,13 @@ def callback(data):
     if data.data == "None":
         robot_control.set_drivetrain_speed(0, 0)
     elif data.data == "Up":
-        robot_control.set_drivetrain_speed(20, 20)
+        robot_control.set_drivetrain_speed(100, -100)
     elif data.data == "Down":
-        robot_control.set_drivetrain_speed(-20, -20)
+        robot_control.set_drivetrain_speed(-100, 100)
     elif data.data == "Left":
-        robot_control.set_drivetrain_speed(-20, 20)
+        robot_control.set_drivetrain_speed(-100, -100)
     elif data.data == "Right":
-        robot_control.set_drivetrain_speed(20, -20)
+        robot_control.set_drivetrain_speed(100, 100)
     else:
         robot_control.set_drivetrain_speed(0, 0)
 
@@ -92,6 +92,9 @@ with RevvyTransportI2C() as transport:
 
     robot_control.set_motor_port_type(1, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(1, config)
+
+    robot_control.set_motor_port_type(2, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
+    robot_control.set_motor_port_config(2, config)
 
     robot_control.set_motor_port_type(4, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(4, config)
