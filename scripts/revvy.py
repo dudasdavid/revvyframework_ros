@@ -136,7 +136,6 @@ def robotCommThread():
 def publisherThread():
     global pubLeft, pubRight
 
-    rospy.loginfo(sensorData[3]["pos"])
     pubLeft.publish(sensorData[0]["pos"])
     pubRight.publish(sensorData[3]["pos"])
 
