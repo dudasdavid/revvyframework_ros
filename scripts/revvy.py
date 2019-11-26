@@ -136,8 +136,8 @@ def robotCommThread():
 def publisherThread():
     global pubLeft, pubRight
 
-    #pubLeft.publish(Int16(sensorData[0]["pos"]))
-    #pubRight.publish(sensorData[3]["pos"])
+    pubLeft.publish(1)#Int16(sensorData[0]["pos"]))
+    pubRight.publish(2)#Int16(sensorData[3]["pos"]))
 
 def controlCallback(data):
     global leftSpeed, rightSpeed
