@@ -6,7 +6,7 @@ from revvy.thread_wrapper import periodic
 import time
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16
 from geometry_msgs.msg import Twist
 
 Motors = {
@@ -59,8 +59,8 @@ lastReadTime = 0
 motorPortData = {"raw":[],"pos":0, "speed":0, "power":0, "pos_reached":0}
 sensorPortData = {"raw":[]}
 batteryData = {"raw":[],"brain":0,"motor":0}
-accelerometerData = {"raw":[]}
-gyroData = {"raw":[]}
+accelerometerData = {"raw":[],"x":0,"y":0,"z":0}
+gyroData = {"raw":[],"x":0,"y":0,"z":0}
 yawData = {"raw":[]}
 
 sensorData = [motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, sensorPortData, sensorPortData, sensorPortData, sensorPortData, batteryData, accelerometerData, gyroData, yawData]
@@ -82,6 +82,14 @@ def processMotorData(slot):
     sensorData[slot]["power"] = power
     sensorData[slot]["pos_reached"] = pos_reached
 
+def processIMUData(slot,lsb_value):
+    raw = sensorData[slot]["raw"]
+    (x, y, z) = struct.unpack('<hhh', bytes(raw))
+    sensorData[slot]["x"] = x * lsb_value
+    sensorData[slot]["y"] = y * lsb_value
+    sensorData[slot]["z"] = z * lsb_value
+
+
 def processSensorData(data):
 
     idx = 0
@@ -96,6 +104,14 @@ def processSensorData(data):
             sensorData[slot]["raw"] = (data[data_start:data_end])
             if slot < 6:
                 processMotorData(slot)
+            elif slot == 10:
+                sensorData[slot]["brain"] = sensorData[slot]["raw"][1]
+                sensorData[slot]["motor"] = sensorData[slot]["raw"][3]
+            elif slot == 11:
+                processIMUData(slot, 0.061)
+            elif slot == 12:
+                processIMUData(slot, 0.035)
+
         else:
             print('McuStatusUpdater: invalid slot length')
 
@@ -117,8 +133,12 @@ def robotCommThread():
         processSensorData(data)
         print(sensorData[0]["pos"])
 
+def publisherThread():
+    global pubLeft, pubRight
 
-
+    rospy.loginfo(sensorData[3]["pos"])
+    pubLeft.publish(sensorData[0]["pos"])
+    pubRight.publish(sensorData[3]["pos"])
 
 def controlCallback(data):
     global leftSpeed, rightSpeed
@@ -138,6 +158,11 @@ def controlCallback(data):
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('key_vel', Twist, controlCallback)
+
+pubLeft = rospy.Publisher('lwheel', Int16, queue_size=10)
+pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
+
+rospy.init_node('revvyodom', anonymous=True)
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
@@ -162,14 +187,18 @@ with RevvyTransportI2C() as transport:
 
     robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
-    robot_control.status_updater_control(0, True)
-    robot_control.status_updater_control(3, True)
-    robot_control.status_updater_control(10, True)
-    robot_control.status_updater_control(11, True)
-    robot_control.status_updater_control(12, True)
-    robot_control.status_updater_control(13, True)
+    robot_control.status_updater_control(0, True) # left motor
+    robot_control.status_updater_control(3, True) # right motor
+    robot_control.status_updater_control(10, True) # battery
+    robot_control.status_updater_control(11, True) # acc
+    robot_control.status_updater_control(12, True) # gyro
 
-    thread = periodic(robotCommThread, 0.05, "Comm")  # 20ms
-    thread.start()
+    i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
+    i2cThread.start()
+
+    pubThread = periodic(publisherThread, 0.1, "Pub")
+    pubThread.start()
+
+
 
     rospy.spin()
