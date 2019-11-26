@@ -55,9 +55,32 @@ drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT =
 leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed = 0, 0, 0, 0
 lastReadTime = 0
 
-sensorIdx = ["motor1", "motor2", "motor3", "motor4", "motor5", "motor6", "sensor1", "sensor2", "sensor3", "sensor4", "battery", "acc", "gyro", "yaw"]
-sensorData = {"motor1":[], "motor2":[], "motor3":[], "motor4":[], "motor5":[], "motor6":[], "sensor1":[], "sensor2":[], "sensor3":[], "sensor4":[], "battery":[], "acc":[], "gyro":[], "yaw":[]}
 
+motorPortData = {"raw":[],"pos":0, "speed":0, "power":0, "pos_reached":0}
+sensorPortData = {"raw":[]}
+batteryData = {"raw":[],"brain":0,"motor":0}
+accelerometerData = {"raw":[]}
+gyroData = {"raw":[]}
+yawData = {"raw":[]}
+
+sensorData = [motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, sensorPortData, sensorPortData, sensorPortData, sensorPortData, batteryData, accelerometerData, gyroData, yawData]
+
+
+def processMotorData(slot):
+    raw = sensorData[slot]["raw"]
+    if len(raw) == 9:
+        (pos, speed, power) = struct.unpack('<lfb', bytearray(raw))
+        pos_reached = None
+    elif len(raw) == 10:
+        (pos, speed, power, pos_reached) = struct.unpack('<lfbb', bytearray(raw))
+    else:
+        print('Slot {}: Received {} bytes of data instead of 9 or 10'.format(slot, len(raw)))
+        return
+
+    sensorData[slot]["pos"] = pos
+    sensorData[slot]["speed"] = speed
+    sensorData[slot]["power"] = power
+    sensorData[slot]["pos_reached"] = pos_reached
 
 def processSensorData(data):
 
@@ -70,7 +93,9 @@ def processSensorData(data):
         data_end = idx + 2 + slot_length
 
         if data_end <= len(data):
-            sensorData[sensorIdx[slot]] = (data[data_start:data_end])
+            sensorData[slot]["raw"] = (data[data_start:data_end])
+            if slot < 6:
+                processMotorData(slot)
         else:
             print('McuStatusUpdater: invalid slot length')
 
@@ -90,7 +115,7 @@ def robotCommThread():
         lastReadTime = time.time()
         data = robot_control.status_updater_read()
         processSensorData(data)
-        print(sensorData["motor1"])
+        print(sensorData[0]["pos"])
 
 
 
