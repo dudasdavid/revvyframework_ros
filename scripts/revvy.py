@@ -115,6 +115,12 @@ with RevvyTransportI2C() as transport:
 
     robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
+    robot_control.status_updater_control(0, True)
+    robot_control.status_updater_control(1, True)
+    robot_control.status_updater_control(2, True)
+    robot_control.status_updater_control(3, True)
+    robot_control.status_updater_control(4, True)
+    robot_control.status_updater_control(5, True)
     robot_control.status_updater_control(10, True)
 
     thread = periodic(robotCommThread, 0.05, "Comm")  # 20ms
