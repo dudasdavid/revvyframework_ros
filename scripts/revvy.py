@@ -68,12 +68,15 @@ def controlCallback(data):
     #print(data.linear.x)
     #print(data.angular.z)
     #print(10 * "*")
-    if data.angular.z != 0:
-        leftSpeed = data.angular.z
-        rightSpeed = data.angular.z
-    else:
-        leftSpeed = -data.linear.x
-        rightSpeed = data.linear.x
+    try:
+        if data.angular.z != 0:
+            leftSpeed = data.angular.z
+            rightSpeed = data.angular.z
+        else:
+            leftSpeed = -data.linear.x
+            rightSpeed = data.linear.x
+    except rospy.ROSInterruptException:
+        pass
 
 
 rospy.init_node('revvyframework', anonymous=True)
