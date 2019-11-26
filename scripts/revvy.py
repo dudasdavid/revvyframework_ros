@@ -63,7 +63,7 @@ accelerometerData = {"raw":[],"x":0,"y":0,"z":0}
 gyroData = {"raw":[],"x":0,"y":0,"z":0}
 yawData = {"raw":[]}
 
-sensorData = [motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, motorPortData, sensorPortData, sensorPortData, sensorPortData, sensorPortData, batteryData, accelerometerData, gyroData, yawData]
+sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData]
 
 
 def processMotorData(slot):
@@ -131,7 +131,7 @@ def robotCommThread():
         lastReadTime = time.time()
         data = robot_control.status_updater_read()
         processSensorData(data)
-        print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"] ))
+        print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"]))
 
 def publisherThread():
     global pubLeft, pubRight
