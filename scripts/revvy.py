@@ -69,8 +69,8 @@ def callback(data):
     # robot_control.ping()
 
 def controlCallback(data):
-    print(data.linear)
-    print(data.angular)
+    print(data.linear[0])
+    print(data.angular[2])
     print(10*"*")
 
 
