@@ -55,6 +55,27 @@ drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT =
 leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed = 0, 0, 0, 0
 lastReadTime = 0
 
+sensorIdx = ["motor1", "motor2", "motor3", "motor4", "motor5", "motor6", "sensor1", "sensor2", "sensor3", "sensor4", "battery", "acc", "gyro", "yaw"]
+sensorData = {"motor1":[], "motor2":[], "motor3":[], "motor4":[], "motor5":[], "motor6":[], "sensor1":[], "sensor2":[], "sensor3":[], "sensor4":[], "battery":[], "acc":[], "gyro":[], "yaw":[]}
+
+
+def processSensorData(data):
+
+    idx = 0
+    while idx < len(data):
+        slot = data[idx]
+        slot_length = data[idx + 1]
+
+        data_start = idx + 2
+        data_end = idx + 2 + slot_length
+
+        if data_end <= len(data):
+            sensorData[sensorIdx[slot]] = (data[data_start:data_end])
+        else:
+            print('McuStatusUpdater: invalid slot length')
+
+        idx = data_end
+
 def robotCommThread():
     global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed,lastReadTime
 
@@ -68,7 +89,8 @@ def robotCommThread():
     if time.time() - lastReadTime > 1:
         lastReadTime = time.time()
         data = robot_control.status_updater_read()
-        print(data)
+        processSensorData(data)
+        print(sensorData["motor1"])
 
 
 
@@ -116,12 +138,11 @@ with RevvyTransportI2C() as transport:
     robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
     robot_control.status_updater_control(0, True)
-    robot_control.status_updater_control(1, True)
-    robot_control.status_updater_control(2, True)
     robot_control.status_updater_control(3, True)
-    robot_control.status_updater_control(4, True)
-    robot_control.status_updater_control(5, True)
     robot_control.status_updater_control(10, True)
+    robot_control.status_updater_control(11, True)
+    robot_control.status_updater_control(12, True)
+    robot_control.status_updater_control(13, True)
 
     thread = periodic(robotCommThread, 0.05, "Comm")  # 20ms
     thread.start()
