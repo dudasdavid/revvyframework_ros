@@ -136,8 +136,8 @@ def robotCommThread():
 def publisherThread():
     global pubLeft, pubRight
 
-    pubLeft.publish(sensorData[0]["pos"])
-    pubRight.publish(sensorData[3]["pos"])
+    pubLeft.publish(Int16(sensorData[0]["pos"]))
+    #pubRight.publish(sensorData[3]["pos"])
 
 def controlCallback(data):
     global leftSpeed, rightSpeed
@@ -155,11 +155,12 @@ def controlCallback(data):
         pass
 
 pubLeft = rospy.Publisher('lwheel', Int16, queue_size=10)
-pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
+#pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('key_vel', Twist, controlCallback)
 
+pubLeft.publish(Int16(0))
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
