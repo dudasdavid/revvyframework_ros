@@ -2,6 +2,7 @@
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
 import time
+import threading
 
 import rospy
 from std_msgs.msg import String
@@ -35,6 +36,38 @@ Sensors = {
     'BumperSwitch': {'driver': 'BumperSwitch', 'config': {}},
 }
 
+
+class killableThread(threading.Thread):
+    def __init__(self, *args, **keywords):
+        threading.Thread.__init__(self, *args, **keywords)
+        self.killed = False
+
+    def start(self):
+        self.__run_backup = self.run
+        self.run = self.__run
+        threading.Thread.start(self)
+
+    def __run(self):
+        sys.settrace(self.globaltrace)
+        self.__run_backup()
+        self.run = self.__run_backup
+
+    def globaltrace(self, frame, why, arg):
+        if why == 'call':
+            return self.localtrace
+        else:
+            return None
+
+    def localtrace(self, frame, why, arg):
+        if self.killed:
+            if why == 'line':
+                raise SystemExit()
+        return self.localtrace
+
+    def kill(self):
+        self.killed = True
+
+
 port_config = Motors["RevvyMotor"]["config"]
 
 (posMin, posMax) = port_config['position_limits']
@@ -46,46 +79,39 @@ config += list(struct.pack("<{}".format("f" * 5), posP, posI, posD, speedLowerLi
 config += list(struct.pack("<{}".format("f" * 5), speedP, speedI, speedD, powerLowerLimit, powerUpperLimit))
 config += list(struct.pack("<h", port_config['encoder_resolution']))
 
-print(config)
-
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
 
-def callback(data):
-    #rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-    if data.data == "None":
-        robot_control.set_drivetrain_speed(0, 0)
-    elif data.data == "Up":
-        robot_control.set_drivetrain_speed(-300, 300)
-    elif data.data == "Down":
-        robot_control.set_drivetrain_speed(300, -300)
-    elif data.data == "Left":
-        robot_control.set_drivetrain_speed(50, 50)
-    elif data.data == "Right":
-        robot_control.set_drivetrain_speed(-50, -50)
-    else:
-        robot_control.set_drivetrain_speed(0, 0)
+def robotCommThread():
+    global leftSpeed, rightSpeed
 
-    # robot_control.ping()
+
+    while True:
+        if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
+            robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
+            lastLeftSpeed = leftSpeed
+            lastRightSpeed = rightSpeed
+        else:
+            robot_control.ping()
+        time.sleep(0.05)
+
 
 def controlCallback(data):
-    print(data.linear.x)
-    print(data.angular.z)
-    print(10*"*")
+    global leftSpeed, rightSpeed
+    #print(data.linear.x)
+    #print(data.angular.z)
+    #print(10 * "*")
     if data.angular.z != 0:
-        robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
+        leftSpeed = data.angular.z
+        rightSpeed = data.angular.z
     else:
-        robot_control.set_drivetrain_speed(-data.linear.x, +data.linear.x)
+        leftSpeed = -data.linear.x
+        rightSpeed = data.linear.x
 
 
-def listener():
-    rospy.init_node('revvyframework')
 
-    #rospy.Subscriber('chatter', String, callback)
-    rospy.Subscriber('key_vel', Twist, controlCallback)
-
-    rospy.spin()
-
+rospy.init_node('revvyframework', anonymous=True)
+rospy.Subscriber('key_vel', Twist, controlCallback)
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
@@ -94,7 +120,7 @@ with RevvyTransportI2C() as transport:
     print(robot_control.get_motor_port_amount())
     print(robot_control.get_sensor_port_amount())
 
-    # robot_control.set_master_status(3) # Set master LED green and monitoring communication
+    robot_control.set_master_status(3) # Set master LED green and monitoring communication
 
     robot_control.set_motor_port_type(1, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(1, config)
@@ -110,10 +136,7 @@ with RevvyTransportI2C() as transport:
 
     robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
-    # robot_control.set_drivetrain_speed(10,10)
+    keyboardProvider = killableThread(target=robotCommThread)
+    keyboardProvider.start()
 
-    # while True:
-    #    robot_control.ping()
-    #    time.sleep(0.02)
-
-    listener()
+    rospy.spin()
