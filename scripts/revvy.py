@@ -131,7 +131,7 @@ def robotCommThread():
         lastReadTime = time.time()
         data = robot_control.status_updater_read()
         processSensorData(data)
-        print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"] )
+        print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"] ))
 
 def publisherThread():
     global pubLeft, pubRight
