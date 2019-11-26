@@ -56,7 +56,7 @@ def robotCommThread():
     global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
 
     if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
-        robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
+        robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
         lastLeftSpeed = leftSpeed
         lastRightSpeed = rightSpeed
     else:
