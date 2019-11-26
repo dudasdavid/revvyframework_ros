@@ -155,14 +155,12 @@ def controlCallback(data):
     except rospy.ROSInterruptException:
         pass
 
+pubLeft = rospy.Publisher('lwheel', Int16, queue_size=10)
+pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('key_vel', Twist, controlCallback)
 
-pubLeft = rospy.Publisher('lwheel', Int16, queue_size=10)
-pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
-
-rospy.init_node('revvyodom', anonymous=True)
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
