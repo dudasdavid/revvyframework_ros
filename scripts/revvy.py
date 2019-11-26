@@ -3,6 +3,8 @@ from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
 from revvy.thread_wrapper import periodic
 
+import time
+
 import rospy
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
@@ -51,9 +53,10 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
 leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed = 0, 0, 0, 0
+lastReadTime = 0
 
 def robotCommThread():
-    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
+    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed,lastReadTime
 
     if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
         robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
@@ -61,6 +64,13 @@ def robotCommThread():
         lastRightSpeed = rightSpeed
     else:
         robot_control.ping()
+
+    if time.time() - lastReadTime > 1:
+        lastReadTime = time.time()
+        data = robot_control.status_updater_read()
+        print(data)
+
+
 
 
 def controlCallback(data):
@@ -85,9 +95,9 @@ rospy.Subscriber('key_vel', Twist, controlCallback)
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
 
-    print(robot_control.get_firmware_version())
-    print(robot_control.get_motor_port_amount())
-    print(robot_control.get_sensor_port_amount())
+    print("MCU Firmware version: %s" % robot_control.get_firmware_version())
+    print("Number of motor ports: %s" % robot_control.get_motor_port_amount())
+    print("Number of sensor ports: %s" % robot_control.get_sensor_port_amount())
 
     robot_control.set_master_status(3) # Set master LED green and monitoring communication
 
