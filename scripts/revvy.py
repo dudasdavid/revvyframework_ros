@@ -72,6 +72,12 @@ def controlCallback(data):
     print(data.linear.x)
     print(data.angular.z)
     print(10*"*")
+    if data.angular.z != 0:
+        robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
+    elif data.linear.x > 0:
+        robot_control.set_drivetrain_speed(-data.linear.x, data.linear.x)
+    else:
+        robot_control.set_drivetrain_speed(data.linear.x, -data.linear.x)
 
 
 def listener():
