@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
-import time
-import threading
+from revvy.thread_wrapper import periodic
 
 import rospy
 from std_msgs.msg import String
@@ -37,36 +36,6 @@ Sensors = {
 }
 
 
-class killableThread(threading.Thread):
-    def __init__(self, *args, **keywords):
-        threading.Thread.__init__(self, *args, **keywords)
-        self.killed = False
-
-    def start(self):
-        self.__run_backup = self.run
-        self.run = self.__run
-        threading.Thread.start(self)
-
-    def __run(self):
-        sys.settrace(self.globaltrace)
-        self.__run_backup()
-        self.run = self.__run_backup
-
-    def globaltrace(self, frame, why, arg):
-        if why == 'call':
-            return self.localtrace
-        else:
-            return None
-
-    def localtrace(self, frame, why, arg):
-        if self.killed:
-            if why == 'line':
-                raise SystemExit()
-        return self.localtrace
-
-    def kill(self):
-        self.killed = True
-
 
 port_config = Motors["RevvyMotor"]["config"]
 
@@ -81,19 +50,17 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
+leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed = 0, 0, 0, 0
 
 def robotCommThread():
-    global leftSpeed, rightSpeed
+    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
 
-
-    while True:
-        if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
-            robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
-            lastLeftSpeed = leftSpeed
-            lastRightSpeed = rightSpeed
-        else:
-            robot_control.ping()
-        time.sleep(0.05)
+    if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
+        robot_control.set_drivetrain_speed(data.angular.z, data.angular.z)
+        lastLeftSpeed = leftSpeed
+        lastRightSpeed = rightSpeed
+    else:
+        robot_control.ping()
 
 
 def controlCallback(data):
@@ -107,7 +74,6 @@ def controlCallback(data):
     else:
         leftSpeed = -data.linear.x
         rightSpeed = data.linear.x
-
 
 
 rospy.init_node('revvyframework', anonymous=True)
@@ -136,7 +102,7 @@ with RevvyTransportI2C() as transport:
 
     robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
-    keyboardProvider = killableThread(target=robotCommThread)
-    keyboardProvider.start()
+    thread = periodic(robotCommThread, 0.05, "Comm")  # 20ms
+    thread.start()
 
     rospy.spin()
