@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-
-import sys
-
-sys.path.insert(0, "~/catkin_ws/src/revvyframework_ros/scipts")
-
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
 import time
 
 import rospy
 from std_msgs.msg import String
+from geometry_msgs.msg import Twist
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
@@ -56,7 +52,7 @@ drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT =
 
 
 def callback(data):
-    rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
+    #rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
     if data.data == "None":
         robot_control.set_drivetrain_speed(0, 0)
     elif data.data == "Up":
@@ -72,11 +68,15 @@ def callback(data):
 
     # robot_control.ping()
 
+def controlCallback(data):
+    print(data.data)
+
 
 def listener():
-    rospy.init_node('listener', anonymous=True)
+    rospy.init_node('revvyframework')
 
-    rospy.Subscriber('chatter', String, callback)
+    #rospy.Subscriber('chatter', String, callback)
+    rospy.Subscriber('key_vel', Twist, controlCallback)
 
     rospy.spin()
 
