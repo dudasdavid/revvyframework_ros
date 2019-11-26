@@ -118,26 +118,23 @@ def processSensorData(data):
         idx = data_end
 
 def robotCommThread():
-    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed,lastReadTime
+    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
 
     if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
         robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
         lastLeftSpeed = leftSpeed
         lastRightSpeed = rightSpeed
     else:
-        robot_control.ping()
-
-    if time.time() - lastReadTime > 1:
-        lastReadTime = time.time()
+        #robot_control.ping()
         data = robot_control.status_updater_read()
         processSensorData(data)
-        print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"]))
+        #print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"]))
 
 def publisherThread():
     global pubLeft, pubRight
 
-    pubLeft.publish(1)#Int16(sensorData[0]["pos"]))
-    pubRight.publish(2)#Int16(sensorData[3]["pos"]))
+    pubLeft.publish(Int16(sensorData[0]["pos"]))
+    pubRight.publish(Int16(sensorData[3]["pos"]))
 
 def controlCallback(data):
     global leftSpeed, rightSpeed
