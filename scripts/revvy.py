@@ -69,10 +69,10 @@ sensorData = [motorPortData, motorPortData, motorPortData, motorPortData, motorP
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
     if len(raw) == 9:
-        (pos, speed, power) = struct.unpack('<lfb', bytearray(raw))
+        (power, pos, speed) = struct.unpack('<blf', bytearray(raw))
         pos_reached = None
     elif len(raw) == 10:
-        (pos, speed, power, pos_reached) = struct.unpack('<lfbb', bytearray(raw))
+        (power, pos, speed, pos_reached) = struct.unpack('<blfb', bytearray(raw))
     else:
         print('Slot {}: Received {} bytes of data instead of 9 or 10'.format(slot, len(raw)))
         return
