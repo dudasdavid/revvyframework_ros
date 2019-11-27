@@ -6,7 +6,7 @@ from revvy.thread_wrapper import periodic
 import time
 
 import rospy
-from std_msgs.msg import String, Int16
+from std_msgs.msg import String, Int16, Int32
 #from geometry_msgs.msg import Twist
 
 Motors = {
@@ -133,8 +133,8 @@ def robotCommThread():
 def publisherThread():
     global pubLeft, pubRight
 
-    pubLeft.publish(Int16(sensorData[0]["pos"]))
-    pubRight.publish(Int16(sensorData[3]["pos"]))
+    pubLeft.publish(Int32(sensorData[0]["pos"]))
+    pubRight.publish(Int32(sensorData[3]["pos"]))
 
 def setLeftSpeed(data):
     global leftSpeed, rightSpeed
@@ -149,19 +149,19 @@ def setRightSpeed(data):
     global leftSpeed, rightSpeed
 
     try:
-        rightSpeed = data.data
+        rightSpeed = -data.data
 
     except rospy.ROSInterruptException:
         pass
 
-pubLeft = rospy.Publisher('lwheel_ticks', Int16, queue_size=1)
-pubRight = rospy.Publisher('rwheel_ticks', Int16, queue_size=1)
+pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
+pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('lwheel_desired_rate', Int16, setLeftSpeed)
 rospy.Subscriber('rwheel_desired_rate', Int16, setRightSpeed)
 
-pubLeft.publish(Int16(0))
+#pubLeft.publish(Int32(0))
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
