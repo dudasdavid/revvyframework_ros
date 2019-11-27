@@ -7,7 +7,7 @@ import time
 
 import rospy
 from std_msgs.msg import String, Int16
-from geometry_msgs.msg import Twist
+#from geometry_msgs.msg import Twist
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
@@ -136,26 +136,30 @@ def publisherThread():
     pubLeft.publish(Int16(sensorData[0]["pos"]))
     pubRight.publish(Int16(sensorData[3]["pos"]))
 
-def controlCallback(data):
+def setLeftSpeed(data):
     global leftSpeed, rightSpeed
-    #print(data.linear.x)
-    #print(data.angular.z)
-    #print(10 * "*")
+
     try:
-        if data.angular.z != 0:
-            leftSpeed = data.angular.z
-            rightSpeed = data.angular.z
-        else:
-            leftSpeed = -data.linear.x
-            rightSpeed = data.linear.x
+        leftSpeed = data.data
+
     except rospy.ROSInterruptException:
         pass
 
-pubLeft = rospy.Publisher('lwheel', Int16, queue_size=10)
-pubRight = rospy.Publisher('rwheel', Int16, queue_size=10)
+def setRightSpeed(data):
+    global leftSpeed, rightSpeed
+
+    try:
+        rightSpeed = data.data
+
+    except rospy.ROSInterruptException:
+        pass
+
+pubLeft = rospy.Publisher('lwheel_ticks', Int16, queue_size=1)
+pubRight = rospy.Publisher('rwheel_ticks', Int16, queue_size=1)
 
 rospy.init_node('revvyframework', anonymous=True)
-rospy.Subscriber('key_vel', Twist, controlCallback)
+rospy.Subscriber('lwheel_desired_rate', Int16, setLeftSpeed)
+rospy.Subscriber('rwheel_desired_rate', Int16, setRightSpeed)
 
 pubLeft.publish(Int16(0))
 
