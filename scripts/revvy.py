@@ -134,13 +134,13 @@ def publisherThread():
     global pubLeft, pubRight
 
     pubLeft.publish(Int32(sensorData[0]["pos"]))
-    pubRight.publish(Int32(sensorData[3]["pos"]))
+    pubRight.publish(Int32(-1*sensorData[3]["pos"]))
 
 def setLeftSpeed(data):
     global leftSpeed, rightSpeed
 
     try:
-        leftSpeed = data.data
+        leftSpeed = -data.data
 
     except rospy.ROSInterruptException:
         pass
@@ -149,7 +149,7 @@ def setRightSpeed(data):
     global leftSpeed, rightSpeed
 
     try:
-        rightSpeed = -data.data
+        rightSpeed = data.data
 
     except rospy.ROSInterruptException:
         pass
