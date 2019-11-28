@@ -134,8 +134,8 @@ def robotCommThread():
 def publisherThread():
     global pubLeft, pubRight
 
-    pubLeft.publish(Int32(sensorData[0]["pos"]))
-    pubRight.publish(Int32(-1*sensorData[3]["pos"]))
+    pubLeft.publish(Int32(-1*sensorData[0]["pos"]))
+    pubRight.publish(Int32(sensorData[3]["pos"]))
 
 
 def setLeftSpeed(data):
