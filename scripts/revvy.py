@@ -6,7 +6,7 @@ from revvy.thread_wrapper import periodic
 import time
 
 import rospy
-from std_msgs.msg import String, Int16, Int32
+from std_msgs.msg import String, Int16, Int32, Int16MultiArray
 #from geometry_msgs.msg import Twist
 
 Motors = {
@@ -52,7 +52,7 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
-leftSpeed, rightSpeed, lastLeftSpeed, lastRightSpeed, leftSpeedShadow = 0, 0, 0, 0, 0
+leftSpeed, rightSpeed, lastLeftSpeed, lastRightSpeed = 0, 0, 0, 0
 lastReadTime = 0
 
 
@@ -138,33 +138,23 @@ def publisherThread():
     pubRight.publish(Int32(sensorData[3]["pos"]))
 
 
-def setLeftSpeed(data):
-    global leftSpeed, rightSpeed, leftSpeedShadow
+def setSpeeds(data):
+    global leftSpeed, rightSpeed
 
     try:
-        leftSpeedShadow = -data.data
+        leftSpeed = -data.data[0]
+        rightSpeed = data.data[1]
 
     except rospy.ROSInterruptException:
         pass
 
-
-def setRightSpeed(data):
-    global leftSpeed, rightSpeed, leftSpeedShadow
-
-    try:
-        rightSpeed = data.data
-        leftSpeed = leftSpeedShadow
-
-    except rospy.ROSInterruptException:
-        pass
 
 
 pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
 pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
 
 rospy.init_node('revvyframework', anonymous=True)
-rospy.Subscriber('lwheel_desired_rate', Int16, setLeftSpeed)
-rospy.Subscriber('rwheel_desired_rate', Int16, setRightSpeed)
+rospy.Subscriber('wheels_desired_rate', Int16MultiArray, setSpeeds)
 
 # pubLeft.publish(Int32(0))
 
