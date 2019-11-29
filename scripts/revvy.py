@@ -52,7 +52,7 @@ config += list(struct.pack("<h", port_config['encoder_resolution']))
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
-leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed = 0, 0, 0, 0
+leftSpeed, rightSpeed, lastLeftSpeed, lastRightSpeed, leftSpeedShadow = 0, 0, 0, 0, 0
 lastReadTime = 0
 
 
@@ -139,20 +139,21 @@ def publisherThread():
 
 
 def setLeftSpeed(data):
-    global leftSpeed, rightSpeed
+    global leftSpeed, rightSpeed, leftSpeedShadow
 
     try:
-        leftSpeed = -data.data
+        leftSpeedShadow = -data.data
 
     except rospy.ROSInterruptException:
         pass
 
 
 def setRightSpeed(data):
-    global leftSpeed, rightSpeed
+    global leftSpeed, rightSpeed, leftSpeedShadow
 
     try:
         rightSpeed = data.data
+        leftSpeed = leftSpeedShadow
 
     except rospy.ROSInterruptException:
         pass
