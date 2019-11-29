@@ -199,7 +199,7 @@ with RevvyTransportI2C() as transport:
     i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
     i2cThread.start()
 
-    pubThread = periodic(publisherThread, 0.1, "Pub")
+    pubThread = periodic(publisherThread, 0.05, "Pub")
     pubThread.start()
 
     rospy.spin()
