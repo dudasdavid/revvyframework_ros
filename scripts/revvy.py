@@ -120,6 +120,8 @@ def processSensorData(data):
                 processIMUData(slot, 0.061*0.00981)
             elif slot == 12:
                 processIMUData(slot, 0.035*degrees2rad)
+            elif slot == 13:
+                processYawData(slot)
 
         else:
             print('McuStatusUpdater: invalid slot length')
@@ -251,7 +253,8 @@ with RevvyTransportI2C() as transport:
     pubThread.start()
 
     input("Press any key to exit!")
-
+    i2cThread.exit()
+    pubThread.exit()
     '''
     try:
         rospy.spin()
