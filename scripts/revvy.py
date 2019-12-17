@@ -70,6 +70,8 @@ restartData = {"raw":[]}
 sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData, restartData]
 degrees2rad = math.pi/180.0
 
+orientation = {"roll":0, "pitch":0, "yaw":0}
+
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
     if len(raw) == 9:
@@ -100,7 +102,6 @@ def processYawData(slot):
     sensorData[slot]["rel"] = relVal
 
 def processSensorData(data):
-
     idx = 0
     while idx < len(data):
         slot = data[idx]
@@ -127,6 +128,53 @@ def processSensorData(data):
             print('McuStatusUpdater: invalid slot length')
 
         idx = data_end
+
+def calculateOrentation():
+    yaw = yawData["abs"] % 360
+    if yaw > 180.0:
+        yaw = yaw - 360.0
+    if yaw < -180.0:
+        yaw = yaw + 360.0
+
+    orientation["yaw"] = yaw
+
+    normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]));
+
+    sinRoll = accelerometerData["y"] / normalAcc;
+    cosRoll = math.sqrt(1.0 - (sinRoll * sinRoll));
+    sinPitch = accelerometerData["x"] / normalAcc;
+    cosPitch = math.sqrt(1.0 - (sinPitch * sinPitch));
+
+    if (sinRoll > 0):
+        if (cosRoll > 0):
+            roll = math.acos(cosRoll) * 180 / math.pi;
+        else:
+            roll = math.acos(cosRoll) * 180 / math.pi + 180;
+    else:
+        if (cosRoll > 0):
+            roll = math.acos(cosRoll) * 180 / math.pi + 360;
+        else:
+            roll = math.acos(cosRoll) * 180 / math.pi + 180;
+
+    if (sinPitch > 0):
+        if (cosPitch > 0):
+            pitch = math.acos(cosPitch) * 180 / math.pi;
+        else:
+            pitch = math.acos(cosPitch) * 180 / math.pi + 180;
+
+    else:
+        if (cosPitch > 0):
+            pitch = math.acos(cosPitch) * 180 / math.pi + 360;
+        else:
+            pitch = math.acos(cosPitch) * 180 / math.pi + 180;
+
+    if (roll >= 360):
+        roll = 360 - roll;
+    if (pitch >= 360):
+        pitch = 360 - pitch;
+
+    orientation["roll"] = roll
+    orientation["pitch"] = pitch
 
 def robotCommThread():
     global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
@@ -157,6 +205,8 @@ def publisherThread():
     imuMsg.angular_velocity.y = gyroData["y"]
     imuMsg.angular_velocity.z = gyroData["z"]
 
+    calculateOrentation()
+
     q = [0,0,0,0]
     imuMsg.orientation.x = q[0]
     imuMsg.orientation.y = q[1]
@@ -168,7 +218,7 @@ def publisherThread():
     seq = seq + 1
     pubImu.publish(imuMsg)
 
-    print(yawData["abs"])
+    print(orientation)
 
 
 def setSpeeds(data):
