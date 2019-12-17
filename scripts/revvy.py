@@ -68,7 +68,7 @@ yawData = {"raw":[]}
 restartData = {"raw":[]}
 
 sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData, restartData]
-
+degrees2rad = math.pi/180.0
 
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
@@ -112,9 +112,9 @@ def processSensorData(data):
                 sensorData[slot]["brain"] = sensorData[slot]["raw"][1]
                 sensorData[slot]["motor"] = sensorData[slot]["raw"][3]
             elif slot == 11:
-                processIMUData(slot, 0.061)
+                processIMUData(slot, 0.061*0.00981)
             elif slot == 12:
-                processIMUData(slot, 0.035)
+                processIMUData(slot, 0.035*degrees2rad)
 
         else:
             print('McuStatusUpdater: invalid slot length')
@@ -151,7 +151,7 @@ def publisherThread():
     imuMsg.angular_velocity.z = gyroData["z"]
 
     q = [0,0,0,0]
-    imuMsg.orientation.x = q[0]
+    imuMsg.orientation.x = yawData["raw"]#q[0]
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
     imuMsg.orientation.w = q[3]
@@ -205,7 +205,7 @@ roll=0
 pitch=0
 yaw=0
 seq=0
-degrees2rad = math.pi/180.0
+
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
