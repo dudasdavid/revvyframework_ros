@@ -7,7 +7,8 @@ import time
 
 import rospy
 from std_msgs.msg import String, Int16, Int32, Int16MultiArray
-#from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Imu
+
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
@@ -134,10 +135,30 @@ def robotCommThread():
 
 
 def publisherThread():
-    global pubLeft, pubRight
+    global pubLeft, pubRight, pubImu
+    global seq
 
     pubLeft.publish(Int32(-1*sensorData[0]["pos"]))
     pubRight.publish(Int32(sensorData[3]["pos"]))
+
+    imuMsg.linear_acceleration.x = 0
+    imuMsg.linear_acceleration.y = 0
+    imuMsg.linear_acceleration.z = 0
+
+    imuMsg.angular_velocity.x = 0
+    imuMsg.angular_velocity.y = 0
+    imuMsg.angular_velocity.z = 0
+
+    q = [0,0,0,0]
+    imuMsg.orientation.x = q[0]
+    imuMsg.orientation.y = q[1]
+    imuMsg.orientation.z = q[2]
+    imuMsg.orientation.w = q[3]
+    imuMsg.header.stamp= rospy.Time.now()
+    imuMsg.header.frame_id = 'base_imu_link'
+    imuMsg.header.seq = seq
+    seq = seq + 1
+    pubImu.publish(imuMsg)
 
 
 def setSpeeds(data):
@@ -154,11 +175,36 @@ def setSpeeds(data):
 
 pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
 pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
+pubImu = rospy.Publisher('imu', Imu, queue_size=1)
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('wheels_desired_rate', Int16MultiArray, setSpeeds)
 
-# pubLeft.publish(Int32(0))
+imuMsg = Imu()
+
+imuMsg.orientation_covariance = [
+0.0025 , 0 , 0,
+0, 0.0025, 0,
+0, 0, 0.0025
+]
+
+imuMsg.angular_velocity_covariance = [
+0.02, 0 , 0,
+0 , 0.02, 0,
+0 , 0 , 0.02
+]
+
+imuMsg.linear_acceleration_covariance = [
+0.04 , 0 , 0,
+0 , 0.04, 0,
+0 , 0 , 0.04
+]
+
+roll=0
+pitch=0
+yaw=0
+seq=0
+degrees2rad = math.pi/180.0
 
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))

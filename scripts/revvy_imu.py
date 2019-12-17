@@ -56,7 +56,7 @@ roll=0
 pitch=0
 yaw=0
 seq=0
-
+degrees2rad = math.pi/180.0
 
 
 rospy.loginfo("Publishing IMU data...")
