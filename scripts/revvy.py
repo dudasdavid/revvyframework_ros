@@ -64,7 +64,7 @@ sensorPortData = {"raw":[]}
 batteryData = {"raw":[],"brain":0,"motor":0}
 accelerometerData = {"raw":[],"x":0,"y":0,"z":0}
 gyroData = {"raw":[],"x":0,"y":0,"z":0}
-yawData = {"raw":[]}
+yawData = {"raw":[], "abs":0, "rel":0}
 restartData = {"raw":[]}
 
 sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData, restartData]
@@ -93,6 +93,11 @@ def processIMUData(slot,lsb_value):
     sensorData[slot]["y"] = y * lsb_value
     sensorData[slot]["z"] = z * lsb_value
 
+def processYawData(slot):
+    raw = sensorData[slot]["raw"]
+    (absVal, relVal) = struct.unpack('<ff', bytes(raw))
+    sensorData[slot]["abs"] = absVal
+    sensorData[slot]["rel"] = relVal
 
 def processSensorData(data):
 
@@ -161,7 +166,7 @@ def publisherThread():
     seq = seq + 1
     pubImu.publish(imuMsg)
 
-    print(yawData["raw"])
+    print(yawData["abs"])
 
 
 def setSpeeds(data):
