@@ -10,6 +10,7 @@ from sensor_msgs.msg import Imu
 degrees2rad = math.pi/180.0
 
 rospy.init_node("revvy_imu_node")
+rate = rospy.Rate(10)
 #We only care about the most recent measurement, i.e. queue_size=1
 pub = rospy.Publisher('imu', Imu, queue_size=1)
 
@@ -90,6 +91,8 @@ while not rospy.is_shutdown():
     imuMsg.header.seq = seq
     seq = seq + 1
     pub.publish(imuMsg)
+
+    rate.sleep()
 
 
 
