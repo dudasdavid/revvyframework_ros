@@ -51,6 +51,13 @@ imuMsg.linear_acceleration_covariance = [
 0 , 0 , 0.04
 ]
 
+roll=0
+pitch=0
+yaw=0
+seq=0
+
+
+
 rospy.loginfo("Publishing IMU data...")
 
 while not rospy.is_shutdown():
