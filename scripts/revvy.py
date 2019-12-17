@@ -161,7 +161,7 @@ def publisherThread():
     seq = seq + 1
     pubImu.publish(imuMsg)
 
-    print(yawData["raw"][0])
+    print(yawData["raw"])
 
 
 def setSpeeds(data):
