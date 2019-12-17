@@ -237,6 +237,7 @@ with RevvyTransportI2C() as transport:
     robot_control.status_updater_control(10, True) # battery
     robot_control.status_updater_control(11, True) # acc
     robot_control.status_updater_control(12, True) # gyro
+    robot_control.status_updater_control(13, True) # yaw data
 
     i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
     i2cThread.start()
@@ -244,10 +245,14 @@ with RevvyTransportI2C() as transport:
     pubThread = periodic(publisherThread, 0.05, "Pub")
     pubThread.start()
 
+    input("Press any key to exit!")
+
+    '''
     try:
         rospy.spin()
     except KeyboardInterrupt:
         print("!!! Keyboard exit !!!")
         i2cThread.exit()
         pubThread.exit()
+    '''
 
