@@ -4,7 +4,7 @@ import rospy
 import math
 
 from sensor_msgs.msg import Imu
-from tf.transformations import quaternion_from_euler
+#from tf.transformations import quaternion_from_euler
 
 
 degrees2rad = math.pi/180.0
@@ -72,7 +72,8 @@ while not rospy.is_shutdown():
     #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103)
     imuMsg.angular_velocity.z = 0
 
-    q = quaternion_from_euler(roll,pitch,yaw)
+    #q = quaternion_from_euler(roll,pitch,yaw)
+    q = [0,0,0,0]
     imuMsg.orientation.x = q[0]
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
