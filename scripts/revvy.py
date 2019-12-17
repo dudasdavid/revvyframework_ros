@@ -5,6 +5,7 @@ from revvy.utils.thread_wrapper import periodic
 
 import time
 import math
+import numpy
 
 import rospy
 from std_msgs.msg import String, Int16, Int32, Int16MultiArray
@@ -129,6 +130,34 @@ def processSensorData(data):
 
         idx = data_end
 
+def quaternion_from_euler(ai, aj, ak):
+    i = 0
+    j = 1
+    k = 2
+
+    ai /= 2.0
+    aj /= 2.0
+    ak /= 2.0
+    ci = math.cos(ai)
+    si = math.sin(ai)
+    cj = math.cos(aj)
+    sj = math.sin(aj)
+    ck = math.cos(ak)
+    sk = math.sin(ak)
+    cc = ci*ck
+    cs = ci*sk
+    sc = si*ck
+    ss = si*sk
+
+    quaternion = numpy.empty((4, ), dtype=numpy.float64)
+
+    quaternion[i] = cj*sc - sj*cs
+    quaternion[j] = cj*ss + sj*cc
+    quaternion[k] = cj*cs - sj*sc
+    quaternion[3] = cj*cc + sj*ss
+
+    return quaternion
+
 def calculateOrentation():
     yaw = yawData["abs"] % 360
     if yaw > 180.0:
@@ -136,7 +165,7 @@ def calculateOrentation():
     if yaw < -180.0:
         yaw = yaw + 360.0
 
-    orientation["yaw"] = yaw
+    orientation["yaw"] = yaw * degrees2rad
 
     normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]));
 
@@ -176,8 +205,8 @@ def calculateOrentation():
     if (pitch >= 360):
         pitch = 360 - pitch;
 
-    orientation["roll"] = roll
-    orientation["pitch"] = pitch
+    orientation["roll"] = roll * degrees2rad
+    orientation["pitch"] = pitch * degrees2rad
 
 def robotCommThread():
     global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
@@ -209,8 +238,8 @@ def publisherThread():
     imuMsg.angular_velocity.z = gyroData["z"]
 
     calculateOrentation()
+    q = quaternion_from_euler(orientation["roll"], orientation["pitch"], orientation["yaw"])
 
-    q = [0,0,0,0]
     imuMsg.orientation.x = q[0]
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
