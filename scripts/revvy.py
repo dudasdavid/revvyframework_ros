@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from revvy.hardware_dependent.rrrc_transport_i2c import RevvyTransportI2C
 from revvy.mcu.rrrc_control import *
-from revvy.thread_wrapper import periodic
+from revvy.utils.thread_wrapper import periodic
 
 import time
 
