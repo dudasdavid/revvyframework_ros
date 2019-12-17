@@ -151,7 +151,7 @@ def publisherThread():
     imuMsg.angular_velocity.z = gyroData["z"]
 
     q = [0,0,0,0]
-    imuMsg.orientation.x = float(yawData["raw"])#q[0]
+    imuMsg.orientation.x = q[0]
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
     imuMsg.orientation.w = q[3]
@@ -160,6 +160,8 @@ def publisherThread():
     imuMsg.header.seq = seq
     seq = seq + 1
     pubImu.publish(imuMsg)
+
+    print(yawData["raw"][0])
 
 
 def setSpeeds(data):
@@ -245,6 +247,7 @@ with RevvyTransportI2C() as transport:
     try:
         rospy.spin()
     except KeyboardInterrupt:
+        print("!!! Keyboard exit !!!)
         i2cThread.exit()
         pubThread.exit()
 
