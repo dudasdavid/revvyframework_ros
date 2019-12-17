@@ -4,6 +4,7 @@ from revvy.mcu.rrrc_control import *
 from revvy.utils.thread_wrapper import periodic
 
 import time
+import math
 
 import rospy
 from std_msgs.msg import String, Int16, Int32, Int16MultiArray
