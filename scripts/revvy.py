@@ -151,7 +151,7 @@ def publisherThread():
     imuMsg.angular_velocity.z = gyroData["z"]
 
     q = [0,0,0,0]
-    imuMsg.orientation.x = yawData["raw"]#q[0]
+    imuMsg.orientation.x = float(yawData["raw"])#q[0]
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
     imuMsg.orientation.w = q[3]
