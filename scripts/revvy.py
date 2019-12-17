@@ -95,7 +95,7 @@ def processIMUData(slot,lsb_value):
 
 def processYawData(slot):
     raw = sensorData[slot]["raw"]
-    (absVal, relVal) = struct.unpack('<ff', bytes(raw))
+    (absVal, relVal) = struct.unpack('<ll', bytes(raw))
     sensorData[slot]["abs"] = absVal
     sensorData[slot]["rel"] = relVal
 
