@@ -242,4 +242,9 @@ with RevvyTransportI2C() as transport:
     pubThread = periodic(publisherThread, 0.05, "Pub")
     pubThread.start()
 
-    rospy.spin()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        i2cThread.exit()
+        pubThread.exit()
+
