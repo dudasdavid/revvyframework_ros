@@ -142,13 +142,13 @@ def publisherThread():
     pubLeft.publish(Int32(-1*sensorData[0]["pos"]))
     pubRight.publish(Int32(sensorData[3]["pos"]))
 
-    imuMsg.linear_acceleration.x = 0
-    imuMsg.linear_acceleration.y = 0
-    imuMsg.linear_acceleration.z = 0
+    imuMsg.linear_acceleration.x = accelerometerData["x"]
+    imuMsg.linear_acceleration.y = accelerometerData["y"]
+    imuMsg.linear_acceleration.z = accelerometerData["z"]
 
-    imuMsg.angular_velocity.x = 0
-    imuMsg.angular_velocity.y = 0
-    imuMsg.angular_velocity.z = 0
+    imuMsg.angular_velocity.x = gyroData["x"]
+    imuMsg.angular_velocity.y = gyroData["y"]
+    imuMsg.angular_velocity.z = gyroData["z"]
 
     q = [0,0,0,0]
     imuMsg.orientation.x = q[0]
