@@ -11,21 +11,21 @@ from std_msgs.msg import String, Int16, Int32, Int16MultiArray
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
-    'RevvyMotor': {
+    'RevvyMotor':    {
         'driver': 'DcMotor',
         'config': {
-            'speed_controller': [1 / 37.5, 0.3, 0, -100, 100],
-            'position_controller': [10, 0, 0, -900, 900],
-            'position_limits': [0, 0],
-            'encoder_resolution': 1536
+            'speed_controller':    [1 / 35, 0.25, 0, -100, 100],
+            'position_controller': [4, 0, 0, -600, 600],
+            'acceleration_limits': [14400, 3600],
+            'encoder_resolution':  1536
         }
     },
     'RevvyMotor_CCW': {
         'driver': 'DcMotor',
         'config': {
-            'speed_controller': [1 / 37.5, 0.3, 0, -100, 100],
-            'position_controller': [10, 0, 0, -900, 900],
-            'position_limits': [0, 0],
+            'speed_controller':    [1 / 35, 0.25, 0, -100, 100],
+            'position_controller': [4, 0, 0, -600, 600],
+            'acceleration_limits': [14400, 3600],
             'encoder_resolution': -1536
         }
     }
@@ -41,14 +41,15 @@ Sensors = {
 
 port_config = Motors["RevvyMotor"]["config"]
 
-(posMin, posMax) = port_config['position_limits']
 (posP, posI, posD, speedLowerLimit, speedUpperLimit) = port_config['position_controller']
 (speedP, speedI, speedD, powerLowerLimit, powerUpperLimit) = port_config['speed_controller']
+(decMax, accMax) = port_config['acceleration_limits']
 
-config = list(struct.pack("<ll", posMin, posMax))
+config = []
+config += list(struct.pack("<h", port_config['encoder_resolution']))
 config += list(struct.pack("<{}".format("f" * 5), posP, posI, posD, speedLowerLimit, speedUpperLimit))
 config += list(struct.pack("<{}".format("f" * 5), speedP, speedI, speedD, powerLowerLimit, powerUpperLimit))
-config += list(struct.pack("<h", port_config['encoder_resolution']))
+config += list(struct.pack("<ff", decMax, accMax))
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
