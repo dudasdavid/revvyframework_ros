@@ -247,7 +247,7 @@ with RevvyTransportI2C() as transport:
     try:
         rospy.spin()
     except KeyboardInterrupt:
-        print("!!! Keyboard exit !!!)
+        print("!!! Keyboard exit !!!")
         i2cThread.exit()
         pubThread.exit()
 
