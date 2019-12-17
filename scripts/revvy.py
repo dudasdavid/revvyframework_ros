@@ -62,8 +62,9 @@ batteryData = {"raw":[],"brain":0,"motor":0}
 accelerometerData = {"raw":[],"x":0,"y":0,"z":0}
 gyroData = {"raw":[],"x":0,"y":0,"z":0}
 yawData = {"raw":[]}
+restartData = {"raw":[]}
 
-sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData]
+sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData, restartData]
 
 
 def processMotorData(slot):
