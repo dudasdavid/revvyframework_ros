@@ -140,6 +140,9 @@ def calculateOrentation():
 
     normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]));
 
+    if normalAcc == 0:
+        return
+
     sinRoll = accelerometerData["y"] / normalAcc;
     cosRoll = math.sqrt(1.0 - (sinRoll * sinRoll));
     sinPitch = accelerometerData["x"] / normalAcc;
