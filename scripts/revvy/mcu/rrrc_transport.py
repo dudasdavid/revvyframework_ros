@@ -4,28 +4,12 @@ import time
 import binascii
 from threading import Lock
 
+from revvy.utils.functions import retry
 
 
 class TransportException(Exception):
     pass
 
-
-def retry(fn, retries=5):
-    """Retry the given function a number of times, or until it returns True or None"""
-    status = False
-    retry_num = 0
-    while retry_num < retries and not status:
-        # noinspection PyBroadException
-        try:
-            status = fn()
-            if status is None:
-                status = True
-        except Exception:
-            print(traceback.format_exc())
-            status = False
-        retry_num += 1
-
-    return status
 
 def crc7(data, crc=0xFF):
     crc7_table = [

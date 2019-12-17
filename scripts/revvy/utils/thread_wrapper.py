@@ -4,6 +4,8 @@ import time
 import traceback
 from threading import Event, Thread, Lock
 
+from revvy.utils.logger import Logger
+
 
 def _call_callbacks(cb_list):
     for cb in list(cb_list):
@@ -20,10 +22,10 @@ class ThreadWrapper:
     """
 
     def __init__(self, func, name="WorkerThread"):
-        print("ThreadWrapper: create {}".format(name))
+        self._log = Logger('ThreadWrapper [{}]'.format(name))
+        self._log('created')
         self._exiting = False
         self._lock = Lock()
-        self._name = name
         self._func = func
         self._stopped_callbacks = []
         self._stop_requested_callbacks = []
@@ -50,12 +52,12 @@ class ThreadWrapper:
                     self._control.clear()
                 self._func(self._ctx)
             except InterruptedError:
-                print('{}: interrupted'.format(self._name))
+                self._log('interrupted')
             except Exception:
                 print(traceback.format_exc())
             finally:
                 with self._lock:
-                    print('{}: stopped'.format(self._name))
+                    self._log('stopped')
                     self._thread_running_event.clear()
                     _call_callbacks(self._stopped_callbacks)
                     self._ctx = None
@@ -73,13 +75,14 @@ class ThreadWrapper:
     def start(self):
         assert not self._exiting
 
-        print("{}: starting".format(self._name))
+        self._log('starting')
         self._control.set()
 
         return self._thread_running_event
 
     def stop(self):
-        print("{}: stopping".format(self._name))
+        self._log('stopping')
+
         evt = Event()
         if self._control.is_set():
             self._thread_running_event.wait()
@@ -99,7 +102,7 @@ class ThreadWrapper:
         return evt
 
     def exit(self):
-        print("{}: exiting".format(self._name))
+        self._log('exiting')
 
         # stop current run
         self.stop()
@@ -107,7 +110,7 @@ class ThreadWrapper:
         self._exiting = True
         self._control.set()
         self._thread.join()
-        print("{}: exited".format(self._name))
+        self._log('exited')
 
     def on_stopped(self, callback):
         with self._lock:

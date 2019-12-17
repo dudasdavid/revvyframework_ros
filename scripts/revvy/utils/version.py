@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-3.0-only
-
 import re
 
 
@@ -21,11 +20,10 @@ class Version:
         match = version_re.match(ver_str)
         if not match:
             raise FormatError
-        major = int(match.group('major'))
-        minor = int(match.group('minor'))
-        rev = int(match.group('rev')) if match.group('rev') is not None else 0
-        self._version = {'major': major, 'minor': minor, 'revision': rev}
-        self._normalized = '{}.{}.{}'.format(self._version['major'], self._version['minor'], self._version['revision'])
+        self._major = int(match.group('major'))
+        self._minor = int(match.group('minor'))
+        self._rev = int(match.group('rev')) if match.group('rev') else 0
+        self._normalized = '{}.{}.{}'.format(self._major, self._minor, self._rev)
 
     @property
     def major(self):
@@ -33,7 +31,7 @@ class Version:
         >>> Version('2.3').major
         2
         """
-        return self._version['major']
+        return self._major
 
     @property
     def minor(self):
@@ -41,7 +39,7 @@ class Version:
         >>> Version('2.3').minor
         3
         """
-        return self._version['minor']
+        return self._minor
 
     @property
     def revision(self):
@@ -49,7 +47,7 @@ class Version:
         >>> Version('2.3.45').revision
         45
         """
-        return self._version['revision']
+        return self._rev
 
     def __le__(self, other):
         """
@@ -167,16 +165,16 @@ class Version:
         def cmp(a, b):
             return -1 if a < b else 1
 
-        if self._version['major'] == other._version['major']:
-            if self._version['minor'] == other._version['minor']:
-                if self._version['revision'] == other._version['revision']:
+        if self._major == other._major:
+            if self._minor == other._minor:
+                if self._rev == other._rev:
                     return 0
                 else:
-                    return cmp(self._version['revision'], other._version['revision'])
+                    return cmp(self._rev, other._rev)
             else:
-                return cmp(self._version['minor'], other._version['minor'])
+                return cmp(self._minor, other._minor)
         else:
-            return cmp(self._version['major'], other._version['major'])
+            return cmp(self._major, other._major)
 
     def __str__(self) -> str:
         """
