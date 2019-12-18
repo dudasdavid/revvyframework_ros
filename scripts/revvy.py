@@ -71,7 +71,7 @@ restartData = {"raw":[]}
 sensorData = [motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), motorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), sensorPortData.copy(), batteryData, accelerometerData, gyroData, yawData, restartData]
 degrees2rad = math.pi/180.0
 
-orientation = {"roll":0, "pitch":0, "yaw":0}
+orientation = {"roll":0, "pitch":0, "yaw":0, "roll_deg":0, "pitch_deg":0, "yaw_deg":0}
 
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
@@ -165,6 +165,7 @@ def calculateOrentation():
     if yaw < -180.0:
         yaw = yaw + 360.0
 
+    orientation["yaw_deg"] = yaw
     orientation["yaw"] = yaw * degrees2rad
 
     normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]));
@@ -205,7 +206,9 @@ def calculateOrentation():
     if (pitch >= 360):
         pitch = 360 - pitch;
 
+    orientation["roll_deg"] = roll
     orientation["roll"] = roll * degrees2rad
+    orientation["pitch_deg"] = pitch
     orientation["pitch"] = pitch * degrees2rad
 
 def robotCommThread():
@@ -223,8 +226,9 @@ def robotCommThread():
 
 
 def publisherThread():
-    global pubLeft, pubRight, pubImu
+    global pubLeft, pubRight, pubImu, pubOrientation
     global seq
+    global array_to_send
 
     pubLeft.publish(Int32(-1*sensorData[0]["pos"]))
     pubRight.publish(Int32(sensorData[3]["pos"]))
@@ -250,7 +254,9 @@ def publisherThread():
     seq = seq + 1
     pubImu.publish(imuMsg)
 
-    print(orientation)
+    #print(orientation)
+    array_to_send.data = [int(orientation["roll_deg"]*10), int(orientation["pitch_deg"]*10), int(orientation["yaw_deg"]*10)]
+    pubOrientation.publish(array_to_send)
 
 
 def setSpeeds(data):
@@ -268,6 +274,8 @@ def setSpeeds(data):
 pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
 pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
 pubImu = rospy.Publisher('imu', Imu, queue_size=1)
+pubOrientation = rospy.Publisher('orientation_deg', Int16MultiArray, queue_size=1)
+array_to_send = Int16MultiArray()
 
 rospy.init_node('revvyframework', anonymous=True)
 rospy.Subscriber('wheels_desired_rate', Int16MultiArray, setSpeeds)
