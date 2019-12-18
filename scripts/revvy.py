@@ -273,7 +273,7 @@ def setSpeeds(data):
 
 pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
 pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
-pubImu = rospy.Publisher('imu', Imu, queue_size=1)
+pubImu = rospy.Publisher('imu_data', Imu, queue_size=1)
 pubOrientation = rospy.Publisher('orientation_deg', Int16MultiArray, queue_size=1)
 array_to_send = Int16MultiArray()
 
