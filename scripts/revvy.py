@@ -337,10 +337,10 @@ with RevvyTransportI2C() as transport:
     robot_control.status_updater_control(12, True) # gyro
     robot_control.status_updater_control(13, True) # yaw data
 
-    i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
+    i2cThread = periodic(robotCommThread, 0.07, "Comm")  # 50ms
     i2cThread.start()
 
-    pubThread = periodic(publisherThread, 0.05, "Pub")
+    pubThread = periodic(publisherThread, 0.07, "Pub")
     pubThread.start()
 
     input("Press any key to exit!")
