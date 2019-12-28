@@ -205,6 +205,7 @@ def calculateOrentation():
         roll = 360 - roll;
     if (pitch >= 360):
         pitch = 360 - pitch;
+    pitch *= -1
 
     orientation["roll_deg"] = roll
     orientation["roll"] = roll * degrees2rad
