@@ -56,7 +56,8 @@ config += list(struct.pack("<ff", decMax, accMax))
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
-leftSpeed, rightSpeed, lastLeftSpeed, lastRightSpeed = 0, 0, 0, 0
+frontLeftSpeed, frontRightSpeed, frontLastLeftSpeed, frontLastRightSpeed = 0, 0, 0, 0
+rearLeftSpeed, rearRightSpeed, rearLastLeftSpeed, rearLastRightSpeed = 0, 0, 0, 0
 lastReadTime = 0
 
 
@@ -213,12 +214,25 @@ def calculateOrentation():
     orientation["pitch"] = pitch * degrees2rad
 
 def robotCommThread():
-    global leftSpeed, rightSpeed,lastLeftSpeed,lastRightSpeed
+    global frontLeftSpeed, frontRightSpeed,frontLastLeftSpeed,frontLastRightSpeed
+    global rearLeftSpeed, rearRightSpeed,rearLastLeftSpeed,rearLastRightSpeed
 
-    if leftSpeed != lastLeftSpeed or rightSpeed != lastRightSpeed:
-        robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
-        lastLeftSpeed = leftSpeed
-        lastRightSpeed = rightSpeed
+    if frontLeftSpeed != frontLastLeftSpeed or frontRightSpeed != frontLastRightSpeed or rearLeftSpeed != rearLastLeftSpeed or rearRightSpeed != rearLastRightSpeed:
+        # robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
+        control = list(struct.pack("<f", rearLeftSpeed))
+        robot_control.set_motor_port_control_value(1, [1] + control)
+        control = list(struct.pack("<f", frontLeftSpeed))
+        robot_control.set_motor_port_control_value(2, [1] + control)
+        control = list(struct.pack("<f", rearRightSpeed))
+        robot_control.set_motor_port_control_value(4, [1] + control)
+        control = list(struct.pack("<f", frontRightSpeed))
+        robot_control.set_motor_port_control_value(5, [1] + control)
+        
+        
+        frontLastLeftSpeed = frontLeftSpeed
+        frontLastRightSpeed = frontRightSpeed
+        rearLastLeftSpeed = rearLeftSpeed
+        rearLastRightSpeed = rearRightSpeed
     else:
         #robot_control.ping()
         data = robot_control.status_updater_read()
@@ -227,12 +241,12 @@ def robotCommThread():
 
 
 def publisherThread():
-    global pubLeft, pubRight, pubImu, pubOrientation
+    global pubTicks, pubImu, pubOrientation
     global seq
     global array_to_send
 
-    pubLeft.publish(Int32(-1*sensorData[0]["pos"]))
-    pubRight.publish(Int32(sensorData[3]["pos"]))
+    array_to_send.data = [int(-1*sensorData[1]["pos"]), int(sensorData[4]["pos"]), int(-1*sensorData[0]["pos"]), int(sensorData[3]["pos"])]
+    pubTicks.publish(array_to_send)
 
     imuMsg.linear_acceleration.x = accelerometerData["x"]
     imuMsg.linear_acceleration.y = accelerometerData["y"]
@@ -261,19 +275,20 @@ def publisherThread():
 
 
 def setSpeeds(data):
-    global leftSpeed, rightSpeed
+    global frontLeftSpeed, frontRightSpeed, rearLeftSpeed, rearRightSpeed
 
     try:
-        leftSpeed = -data.data[0]
-        rightSpeed = data.data[1]
+        frontLeftSpeed = -data.data[0]
+        frontRightSpeed = data.data[1]
+        rearLeftSpeed = -data.data[2]
+        rearRightSpeed = data.data[3]
 
     except rospy.ROSInterruptException:
         pass
 
 
 
-pubLeft = rospy.Publisher('lwheel_ticks', Int32, queue_size=1)
-pubRight = rospy.Publisher('rwheel_ticks', Int32, queue_size=1)
+pubTicks = rospy.Publisher('wheel_ticks', Int16MultiArray, queue_size=1)
 pubImu = rospy.Publisher('imu_data', Imu, queue_size=1)
 pubOrientation = rospy.Publisher('orientation_deg', Int16MultiArray, queue_size=1)
 array_to_send = Int16MultiArray()
@@ -328,19 +343,21 @@ with RevvyTransportI2C() as transport:
     robot_control.set_motor_port_type(5, 1)  # 0 ='NotConfigured': NullMotor, 1 = 'DcMotor': DcMotorController
     robot_control.set_motor_port_config(5, config)
 
-    robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
+    # robot_control.configure_drivetrain(1, drivetrainMotors)  # DIFFERENTIAL = 1
 
     robot_control.status_updater_control(0, True) # left motor
+    robot_control.status_updater_control(1, True) # left motor
     robot_control.status_updater_control(3, True) # right motor
+    robot_control.status_updater_control(4, True) # right motor
     robot_control.status_updater_control(10, True) # battery
     robot_control.status_updater_control(11, True) # acc
     robot_control.status_updater_control(12, True) # gyro
     robot_control.status_updater_control(13, True) # yaw data
 
-    i2cThread = periodic(robotCommThread, 0.07, "Comm")  # 50ms
+    i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
     i2cThread.start()
 
-    pubThread = periodic(publisherThread, 0.07, "Pub")
+    pubThread = periodic(publisherThread, 0.05, "Pub")
     pubThread.start()
 
     input("Press any key to exit!")
