@@ -74,6 +74,8 @@ degrees2rad = math.pi/180.0
 
 orientation = {"roll":0, "pitch":0, "yaw":0, "roll_deg":0, "pitch_deg":0, "yaw_deg":0}
 
+quaternion = numpy.empty((4, ), dtype=numpy.float64)
+
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
     if len(raw) == 9:
@@ -132,6 +134,7 @@ def processSensorData(data):
         idx = data_end
 
 def quaternion_from_euler(ai, aj, ak):
+    global quaternion
     i = 0
     j = 1
     k = 2
@@ -149,8 +152,6 @@ def quaternion_from_euler(ai, aj, ak):
     cs = ci*sk
     sc = si*ck
     ss = si*sk
-
-    quaternion = numpy.empty((4, ), dtype=numpy.float64)
 
     quaternion[i] = cj*sc - sj*cs
     quaternion[j] = cj*ss + sj*cc
@@ -216,6 +217,13 @@ def calculateOrentation():
 def robotCommThread():
     global frontLeftSpeed, frontRightSpeed,frontLastLeftSpeed,frontLastRightSpeed
     global rearLeftSpeed, rearRightSpeed,rearLastLeftSpeed,rearLastRightSpeed
+    global pubTicks, pubImu, pubOrientation
+    global seq
+    global array_to_send
+
+
+    data = robot_control.status_updater_read()
+    processSensorData(data)
 
     if frontLeftSpeed != frontLastLeftSpeed or frontRightSpeed != frontLastRightSpeed or rearLeftSpeed != rearLastLeftSpeed or rearRightSpeed != rearLastRightSpeed:
         # robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
@@ -234,18 +242,16 @@ def robotCommThread():
         rearLastLeftSpeed = rearLeftSpeed
         rearLastRightSpeed = rearRightSpeed
     else:
+        pass
         #robot_control.ping()
-        data = robot_control.status_updater_read()
-        processSensorData(data)
         #print("L:%d,R:%d" % (sensorData[0]["pos"],sensorData[3]["pos"]))
 
-
-def publisherThread():
-    global pubTicks, pubImu, pubOrientation
-    global seq
-    global array_to_send
-
-    array_to_send.data = [int(-1*sensorData[1]["pos"]), int(sensorData[4]["pos"]), int(-1*sensorData[0]["pos"]), int(sensorData[3]["pos"])]
+    # array_to_send.data = [Int16(-1*sensorData[1]["pos"]).data, Int16(sensorData[4]["pos"]).data, Int16(-1*sensorData[0]["pos"]).data, Int16(sensorData[3]["pos"]).data]
+    
+    
+    ### Publishing topics ###
+    
+    array_to_send.data = numpy.array([int(-1*sensorData[1]["pos"]), int(sensorData[4]["pos"]), int(-1*sensorData[0]["pos"]), int(sensorData[3]["pos"])], dtype=numpy.int16)
     pubTicks.publish(array_to_send)
 
     imuMsg.linear_acceleration.x = accelerometerData["x"]
@@ -322,6 +328,8 @@ yaw=0
 seq=0
 
 
+
+
 with RevvyTransportI2C() as transport:
     robot_control = RevvyControl(transport.bind(0x2D))
 
@@ -357,12 +365,12 @@ with RevvyTransportI2C() as transport:
     i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
     i2cThread.start()
 
-    pubThread = periodic(publisherThread, 0.05, "Pub")
-    pubThread.start()
+    # pubThread = periodic(publisherThread, 0.05, "Pub")
+    # pubThread.start()
 
     input("Press any key to exit!")
     i2cThread.exit()
-    pubThread.exit()
+    # pubThread.exit()
     '''
     try:
         rospy.spin()
