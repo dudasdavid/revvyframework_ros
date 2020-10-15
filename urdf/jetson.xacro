@@ -31,7 +31,8 @@
     <visual name='base_link_visual'>
       <origin xyz="0 0 0.09" rpy=" 0 0 0"/>
       <geometry>
-        <box size=".20 .08 .15"/>
+        <!--box size=".20 .08 .15"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/revvy_jetbot.dae"/>
       </geometry>
     </visual>
 
@@ -75,7 +76,8 @@
     <visual name='front_left_wheel_visual'>
       <origin xyz="0.0 0 0" rpy=" 0 1.5708 1.5708"/>
       <geometry>
-        <cylinder radius = ".035" length = ".03"/>
+        <!--cylinder radius = ".035" length = ".03"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/wheel.dae" scale="1.08 1.08 1.08"/>
       </geometry>
     </visual>
   </link>
@@ -111,7 +113,8 @@
     <visual name='rear_left_wheel_visual'>
       <origin xyz="0.0 0 0" rpy=" 0 1.5708 1.5708"/>
       <geometry>
-        <cylinder radius = ".035" length = ".03"/>
+        <!--cylinder radius = ".035" length = ".03"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/wheel.dae" scale="1.08 1.08 1.08"/>
       </geometry>
     </visual>
   </link>
@@ -145,9 +148,10 @@
     </collision>
 
     <visual name='front_right_wheel_visual'>
-      <origin xyz="0.0 0 0" rpy=" 0 1.5708 1.5708"/>
+      <origin xyz="0.0 0 0" rpy=" 0 1.5708 -1.5708"/>
       <geometry>
-        <cylinder radius = ".035" length = ".03"/>
+        <!--cylinder radius = ".035" length = ".03"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/wheel.dae" scale="1.08 1.08 1.08"/>
       </geometry>
     </visual>
   </link>
@@ -181,9 +185,10 @@
     </collision>
 
     <visual name='rear_right_wheel_visual'>
-      <origin xyz="0.0 0 0" rpy=" 0 1.5708 1.5708"/>
+      <origin xyz="0.0 0 0" rpy=" 0 1.5708 -1.5708"/>
       <geometry>
-        <cylinder radius = ".035" length = ".03"/>
+        <!--cylinder radius = ".035" length = ".03"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/wheel.dae" scale="1.08 1.08 1.08"/>
       </geometry>
     </visual>
   </link>
@@ -217,17 +222,18 @@
       </geometry>
     </collision>
 
-    <visual name='camera_link_visual'>
+    <visual name='rgbd_camera_link_visual'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
       <geometry>
-        <box size=".05 .05 .05"/>
+        <!--box size=".05 .05 .05"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/d435.dae"/>
       </geometry>
     </visual>
 
   </link>
 
   <joint type="fixed" name="rgbd_camera_joint">
-    <origin xyz="0.1 0 0.15" rpy="0 0 0"/>
+    <origin xyz="0.08 0 0.15" rpy="0 0 0"/>
     <child link="rgbd_camera_link"/>
     <parent link="base_link"/>
     <axis xyz="0 1 0" rpy="0 0 0"/>
@@ -293,14 +299,15 @@
     <visual name='main_camera_link_visual'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
       <geometry>
-        <box size=".05 .05 .05"/>
+        <!--box size=".05 .05 .05"/-->
+        <mesh filename = "package://revvyframework_ros/meshes/picam.dae" scale="0.001 0.001 0.001"/>
       </geometry>
     </visual>
 
   </link>
 
-  <joint type="fixed" name="camera_joint">
-    <origin xyz="0.1 0 0.10" rpy="-1.5707 0 -1.5707"/>
+  <joint type="fixed" name="main_camera_joint">
+    <origin xyz="0.08 0 0.115" rpy="-1.5707 0 -1.5707"/>
     <child link="main_camera_link"/>
     <parent link="base_link"/>
     <axis xyz="0 1 0" rpy="0 0 0"/>
@@ -326,16 +333,16 @@
     </collision>
 
     <visual name='scan_visual'>
-      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      <origin xyz="0 0 0" rpy=" 0 0 3.1415"/>
       <geometry>
-        <mesh filename = "package://revvyframework_ros/meshes/hokuyo.dae"/>
+        <mesh filename = "package://revvyframework_ros/meshes/rplidar.dae"/>
       </geometry>
     </visual>
 
   </link>
 
   <joint type="fixed" name="scan_joint">
-    <origin xyz="-0.07 0 0.22" rpy="0 0 0"/>
+    <origin xyz="-0.066 0 0.23" rpy="0 0 0"/>
     <child link="scan"/>
     <parent link="base_link"/>
     <axis xyz="0 1 0" rpy="0 0 0"/>
