@@ -233,7 +233,7 @@
   </link>
 
   <joint type="fixed" name="rgbd_camera_joint">
-    <origin xyz="0.08 0 0.15" rpy="0 0 0"/>
+    <origin xyz="0.07 0 0.16" rpy="0 0 0"/>
     <child link="rgbd_camera_link"/>
     <parent link="base_link"/>
     <axis xyz="0 1 0" rpy="0 0 0"/>
@@ -243,7 +243,7 @@
   </link>
 
   <joint type="fixed" name="rgbd_camera_depth_joint">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0.01 0.0175 0.0125" rpy="0 0 0"/>
     <child link="rgbd_camera_depth_frame"/>
     <parent link="rgbd_camera_link"/>
   </joint>
@@ -261,7 +261,7 @@
   </link>
 
   <joint type="fixed" name="rgbd_camera_color_joint">
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0.01 0.0325 0.0125" rpy="0 0 0"/>
     <child link="rgbd_camera_color_frame"/>
     <parent link="rgbd_camera_link"/>
   </joint>
@@ -273,6 +273,42 @@
     <origin xyz="0 0 0" rpy="-1.5707 0 -1.5707"/>
     <child link="rgbd_camera_color_optical_frame"/>
     <parent link="rgbd_camera_color_frame"/>
+  </joint>
+
+  <link name="rgbd_camera_accel_frame">
+  </link>
+
+  <joint type="fixed" name="rgbd_camera_accel_joint">
+    <origin xyz="0 0.027 0.013" rpy="0 0 0"/>
+    <child link="rgbd_camera_accel_frame"/>
+    <parent link="rgbd_camera_link"/>
+  </joint>
+
+  <link name="rgbd_camera_accel_optical_frame">
+  </link>
+
+  <joint type="fixed" name="rgbd_camera_accel_optical_joint">
+    <origin xyz="0 0 0" rpy="-1.5707 0 -1.5707"/>
+    <child link="rgbd_camera_accel_optical_frame"/>
+    <parent link="rgbd_camera_accel_frame"/>
+  </joint>
+
+  <link name="rgbd_camera_gyro_frame">
+  </link>
+
+  <joint type="fixed" name="rgbd_camera_gyro_joint">
+    <origin xyz="0 0.027 0.013" rpy="0 0 0"/>
+    <child link="rgbd_camera_gyro_frame"/>
+    <parent link="rgbd_camera_link"/>
+  </joint>
+
+  <link name="rgbd_camera_gyro_optical_frame">
+  </link>
+
+  <joint type="fixed" name="rgbd_camera_gyro_optical_joint">
+    <origin xyz="0 0 0" rpy="-1.5707 0 -1.5707"/>
+    <child link="rgbd_camera_gyro_optical_frame"/>
+    <parent link="rgbd_camera_gyro_frame"/>
   </joint>
   
 
@@ -342,7 +378,7 @@
   </link>
 
   <joint type="fixed" name="scan_joint">
-    <origin xyz="-0.066 0 0.23" rpy="0 0 0"/>
+    <origin xyz="-0.08 0 0.225" rpy="0 0 0"/>
     <child link="scan"/>
     <parent link="base_link"/>
     <axis xyz="0 1 0" rpy="0 0 0"/>

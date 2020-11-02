@@ -266,8 +266,8 @@ class SetMotorPortControlCommand(Command):
     @property
     def command_id(self): return 0x14
 
-    def __call__(self, port_idx, control):
-        return self._send([port_idx] + control)
+    def __call__(self, command_bytes: bytes):
+        return self._send(command_bytes)
 
 
 class ReadPortStatusCommand(Command, ABC):

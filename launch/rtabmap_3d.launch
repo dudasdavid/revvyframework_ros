@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Arguments for launch file with defaults provided -->
+    <arg name="database_path"     default="$(find revvyframework_ros)/maps/rtabmap.db"/>
+    <arg name="rgb_topic"   default="/rgbd_camera/color/image_raw"/>
+    <arg name="depth_topic" default="/rgbd_camera/aligned_depth_to_color/image_raw"/>
+    <arg name="camera_info_topic" default="/rgbd_camera/color/camera_info"/>
+    <arg name="depth_camera_info_topic" default="/rgbd_camera/depth/camera_info"/>
+    
+
+    <!-- Mapping Node -->
+    <group ns="rtabmap">
+
+        <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="--delete_db_on_start">
+
+            <!-- Basic RTAB-Map Parameters -->
+            <param name="database_path"       type="string" value="$(arg database_path)"/>
+            <param name="frame_id"            type="string" value="base_link"/>
+            <param name="odom_frame_id"       type="string" value="odom"/>
+            <param name="subscribe_depth"     type="bool"   value="true"/>
+            <param name="subscribe_rgb"       type="bool"   value="true"/>
+            <param name="subscribe_rgbd"      type="bool"   value="false"/>
+            <param name="subscribe_scan"      type="bool"   value="true"/>
+
+
+            <!-- RTAB-Map Inputs -->
+            <remap from="scan" to="/scan"/>
+            <remap from="rgb/image"       to="$(arg rgb_topic)"/>
+            <remap from="depth/image"     to="$(arg depth_topic)"/>
+            <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+            <remap from="depth/camera_info" to="$(arg depth_camera_info_topic)"/>
+            <remap from="rgbd_image" to="rgbd_image"/>
+            <remap from="odom" to="/odom_combined"/>
+
+            <!-- RTAB-Map Output -->
+            <remap from="grid_map" to="/map"/>
+
+            <param name="queue_size" type="string" value="10"/>
+
+            <!-- Occupancy grid from scan or depth -->
+            <param name="Grid/FromDepth" type="string" value="true"/>
+            <param name="Grid/3D" type="string" value="true"/>
+            <param name="Grid/CellSize" type="string" value="0.02"/>
+            <param name="Grid/FootprintHeight" type="string" value="0.4"/>
+            <param name="Grid/FootprintLength" type="string" value="0.4"/>
+            <param name="Grid/FootprintWidth" type="string" value="0.3"/>
+            <param name="Grid/MaxGroundHeight" type="string" value="0.1"/>
+            <param name="Grid/NoiseFilteringMinNeighbors" type="string" value="10"/>
+            <param name="Grid/NoiseFilteringRadius" type="string" value="0.1"/>
+            <param name="Grid/RangeMax" type="string" value="3"/>
+            <param name="Grid/RayTracing" type="string" value="true"/>
+            <param name="Grid/MapFrameProjection" type="string" value="true"/>
+            
+
+            <!-- Rate (Hz) at which new nodes are added to map -->
+            <param name="Rtabmap/DetectionRate" type="string" value="1"/>
+
+            <!-- 2D SLAM -->
+            <param name="Reg/Force3DoF" type="string" value="false"/>
+
+            <!-- Loop Closure Detection -->
+            <!-- 0=SURF 1=SIFT 2=ORB 3=FAST/FREAK 4=FAST/BRIEF 5=GFTT/FREAK 6=GFTT/BRIEF 7=BRISK 8=GFTT/ORB 9=KAZE -->
+            <param name="Kp/DetectorStrategy" type="string" value="8"/>
+            <param name="Vis/FeatureType" type="string" value="8"/>
+
+            <!-- Maximum visual words per image (bag-of-words) -->
+            <param name="Kp/MaxFeatures" type="string" value="400"/>
+
+            <!-- Used to extract more or less SURF features -->
+            <!--param name="SURF/HessianThreshold" type="string" value="100"/-->
+
+            <!-- Loop Closure Constraint -->
+            <!-- 0=Visual, 1=ICP (1 requires scan)-->
+            <param name="Reg/Strategy" type="string" value="1"/>
+
+            <param name="Icp/VoxelSize" type="string" value="0.02"/>
+            <param name="Icp/MaxCorrespondenceDistance" type="string" value="0.1"/>
+            <!--param name="RGBD/NeighborLinkRefining" type="string" value="true"/>
+            <param name="RGBD/ProximityPathMaxNeighbors" type="string" value="10"/>
+            <param name="RGBD/ProximityBySpace" type="string" value="true"/>
+            <param name="RGBD/AngularUpdate" type="string" value="0.1"/>
+            <param name="RGBD/LinearUpdate" type="string" value="0.1"/>
+            <param name="RGBD/OptimizeFromGraphEnd" type="string" value="false"/-->
+
+            <!-- Minimum visual inliers to accept loop closure -->
+            <param name="Vis/MinInliers" type="string" value="10"/>
+
+            <!-- Set to false to avoid saving data when robot is not moving -->
+            <param name="Mem/NotLinkedNodesKept" type="string" value="false"/>
+
+
+        </node>
+
+        <!-- visualization with rtabmapviz -->
+        <!--node pkg="rtabmap_ros" type="rtabmapviz" name="rtabmapviz" args="-d $(find rtabmap_ros)/launch/config/rgbd_gui.ini" output="screen">
+            <param name="subscribe_depth"             type="bool" value="true"/>
+            <param name="subscribe_scan"              type="bool" value="true"/>
+            <param name="frame_id"                    type="string" value="base_footprint"/>
+
+            <remap from="rgb/image"       to="$(arg rgb_topic)"/>
+            <remap from="depth/image"     to="$(arg depth_topic)"/>
+            <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+            <remap from="scan"            to="/scan"/>
+        </node-->
+    </group>
+
+
+</launch>

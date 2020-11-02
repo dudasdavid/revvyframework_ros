@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- send urdf to param server -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find revvyframework_ros)/urdf/jetson.xacro'" />
+
+  <!-- Send fake joint values-->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="false"/>
+    <param name="rate" value="50"/>
+  </node>
+
+  <!-- Send robot states to tf -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+  </node>
+
+  <arg name="ticks_per_meter" value="1756" />
+  <arg name="wheel_separation" value="0.11" />
+  <arg name="wheel_separation_length" value="0.1305"/>
+    
+  <node name="controller" pkg="mecanum_drive" type="mecanum_drive_controller"
+        output="screen">
+    <rosparam subst_value="true">
+      ticks_per_meter: $(arg ticks_per_meter)
+      wheel_separation: $(arg wheel_separation)
+      wheel_separation_length: $(arg wheel_separation_length)
+      max_motor_speed: 3000
+      timeout: 1.0
+      rate: 50.0
+    </rosparam>
+  </node>
+    
+  <node name="odom_publisher" pkg="mecanum_drive" type="mecanum_drive_odometry" output="screen">
+      <rosparam subst_value="true">
+        ticks_per_meter: $(arg ticks_per_meter)
+        wheel_separation: $(arg wheel_separation)
+        wheel_separation_length: $(arg wheel_separation_length)
+        base_frame_id: "base_footprint"
+        publish_tf: "false"
+        odom_frame_id: "odom"
+        rate: 50.0
+      </rosparam>
+  </node>
+  
+  <node name="rplidarNode"          pkg="rplidar_ros"  type="rplidarNode" output="screen">
+    <param name="serial_port"         type="string" value="/dev/ttyUSB0"/>
+    <param name="serial_baudrate"     type="int"    value="115200"/><!--A1/A2 -->
+    <!--param name="serial_baudrate"     type="int"    value="256000"--><!--A3 -->
+    <param name="frame_id"            type="string" value="scan"/>
+    <param name="inverted"            type="bool"   value="false"/>
+    <param name="angle_compensate"    type="bool"   value="true"/>
+  </node>
+  
+  <node name="revvyNode" pkg="revvyframework_ros" type="revvy.py" output="screen">
+  </node>
+  
+  <node pkg="jetson_camera" type="jetson_camera_node" name="main_camera" clear_params="true" output="screen">
+    <param name="cap_width" value="3264"/>
+    <param name="cap_height" value="2464"/>
+    <param name="width" value="320"/>
+    <param name="height" value="240"/>
+    <param name="fps" value="10"/>
+    <param name="flip_method" value="2"/>
+    <param name="grayscale" value="0"/>
+    <param name="output_resize" value="0"/>    
+
+    <param name="frame_id" value="main_camera_link"/>
+    <param name="camera_info_url" value="file://$(find jetson_camera)/camera_info/raspicam_v2.yaml"/>
+    
+  </node>
+  
+  <param name="/main_camera/image_raw/compressed/format" type="string" value="jpeg" />
+  <param name="/main_camera/image_raw/compressed/jpeg_quality" type="int" value="30" />
+  <param name="/main_camera/image_raw/compressed/png_level" type="int" value="9" />
+
+  <include file="$(find revvyframework_ros)/launch/realsense.launch"/>
+  <!--include file="gmapping-only.launch"/-->
+  <!--include file="rtab_map_slam.launch"/-->
+  <!--include file="navigation_advanced.launch"/-->
+  <!--include file="amcl-advanced.launch"/-->
+
+  <arg name="cmd_vel_out" default="input"/>
+  <arg name="config_topics" default="$(find revvyframework_ros)/config/twist_mux_topics.yaml"/>
+  <arg name="config_locks"  default="$(find revvyframework_ros)/config/twist_mux_locks.yaml"/>
+
+  <node pkg="twist_mux" type="twist_mux" name="twist_mux" output="screen">
+    <remap from="cmd_vel_out" to="$(arg cmd_vel_out)"/>
+
+    <rosparam file="$(arg config_locks)"  command="load"/>
+    <rosparam file="$(arg config_topics)" command="load"/>
+  </node>
+
+  <node name="cob_base_velocity_smoother" pkg="cob_base_velocity_smoother"  type="cob_base_velocity_smoother" output="screen">
+    <remap from="output" to="cmd_vel"/>
+    <param name="maximal_time_delay_to_stop" value="0.7"/>
+    <param name="min_input_rate" value="2"/>
+    <param name="loop_rate" value="30"/>
+    <param name="thresh_max_acc" value="0.1"/>
+    <param name="maximal_time_delay" value="4"/>
+    <param name="circular_buffer_capacity" value="12"/>
+  </node>
+
+  <node pkg="hector_trajectory_server" type="hector_trajectory_server" respawn="false" name="hector_trajectory_server" output="screen">
+    <param name="source_frame_name" value="base_footprint"/>
+    <param name="target_frame_name" value="map"/>
+  </node>
+
+</launch>

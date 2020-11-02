@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
+    <remap from="imu_data" to="/imu/data"/>
+    <param name="output_frame" value="odom"/>
+    <param name="base_footprint_frame" value="base_footprint"/>
+    <param name="freq" value="50.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <param name="debug" value="false"/>
+    <param name="self_diagnose" value="false"/>
+  </node>
+
+  <node pkg="pose_to_odom" type="pose_to_odom" name="pose_to_odom" clear_params="true">
+    <rosparam command="load" file="$(find pose_to_odom)/param/covariances.yaml" />
+  </node>
+
+  <node pkg="imu_transformer" type="imu_transformer_node" name="ImuTransformer">
+    <remap from="/imu_in/data" to="/rgbd_camera/imu"/>
+    <remap from="/imu_out/data" to="/rgbd_camera/imu_transformed"/>
+    <param name="target_frame" value="imu_link"/>
+  </node>
+
+  <node pkg="imu_filter_madgwick" type="imu_filter_node" name="ImuFilter">
+    <param name="use_mag" type="bool" value="false" />
+    <param name="publish_tf" type="bool" value="false" />
+    <param name="orientation_stddev" type="double" value="0.25" />
+    <param name="remove_gravity_vector" type="bool" value="true" />
+    <remap from="/imu/data_raw" to="/rgbd_camera/imu_transformed"/>
+  </node>
+
+  <!--include file="$(find robot_localization)/launch/ekf_template.launch"/>
+  <param name="/ekf_se/frequency" value="50"/>
+  <param name="/ekf_se/two_d_mode" value="false"/>
+  <param name="/ekf_se/base_link_frame" value="base_footprint"/>
+  <param name="/ekf_se/odom0" value="/odom"/>
+  <param name="/ekf_se/world_frame" value="odom"/>
+  <rosparam param="/ekf_se/odom0_config">[true,true,true,
+                                          false,false,true,
+                                          true,true,true,
+                                          false,false,true,
+                                          false,false,false]
+  </rosparam>
+  <param name="/ekf_se/odom0_relative" value="false"/>
+  <param name="/ekf_se/odom0_differential" value="false"/>
+  <param name="/ekf_se/odom0_queue_size" value="10" />
+
+  <param name="/ekf_se/imu0" value="/imu/data"/>
+  <rosparam param="/ekf_se/imu0_config">[false, false, false,
+                                          true,  true,  true,
+                                          false,  false,  false,
+                                          true,  true,  true,
+                                          false,  false,  false]
+  </rosparam>
+  <param name="/ekf_se/imu0_differential" value="true"/>
+  <param name="/ekf_se/imu0_relative" value="false"/>
+  <param name="/ekf_se/imu0_queue_size" value="10" />
+  
+  <param name="/ekf_se/imu1" value="/imu_revvyx"/>
+  <rosparam param="/ekf_se/imu1_config">[false, false, false,
+                                          true,  true,  false,
+                                          false,  false,  false,
+                                          false,  false,  false,
+                                          false,  false,  false]
+  </rosparam>
+  <param name="/ekf_se/imu1_differential" value="false"/>
+  <param name="/ekf_se/imu1_relative" value="true"/--> 
+
+</launch>

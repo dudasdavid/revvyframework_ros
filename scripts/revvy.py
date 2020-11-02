@@ -14,7 +14,7 @@ from sensor_msgs.msg import Imu
 
 Motors = {
     'NotConfigured': {'driver': 'NotConfigured', 'config': {}},
-    'RevvyMotor':    {
+    'RevvyMotor_old':    {
         'driver': 'DcMotor',
         'config': {
             'speed_controller':    [1 / 35, 0.25, 0, -100, 100],
@@ -23,13 +23,16 @@ Motors = {
             'encoder_resolution':  1536
         }
     },
-    'RevvyMotor_CCW': {
+    'RevvyMotor': {
         'driver': 'DcMotor',
         'config': {
-            'speed_controller':    [1 / 35, 0.25, 0, -100, 100],
-            'position_controller': [4, 0, 0, -600, 600],
-            'acceleration_limits': [14400, 3600],
-            'encoder_resolution': -1536
+            'speed_controller': [0.6065, 0.3935, 0, -150, 150],
+            'position_controller': [0.1, 0.0000, 0, -150, 150],
+            'acceleration_limits': [500, 500],
+            'max_current': 1.5,
+            'linearity': {0.5: 0, 5.0154: 18, 37.0370: 60, 67.7083: 100, 97.4151: 140, 144.0972: 200},
+            'encoder_resolution': 12,
+            'gear_ratio': 64.8
         }
     }
 }
@@ -44,15 +47,22 @@ Sensors = {
 
 port_config = Motors["RevvyMotor"]["config"]
 
+resolution = port_config['encoder_resolution'] * port_config['gear_ratio']
 (posP, posI, posD, speedLowerLimit, speedUpperLimit) = port_config['position_controller']
 (speedP, speedI, speedD, powerLowerLimit, powerUpperLimit) = port_config['speed_controller']
 (decMax, accMax) = port_config['acceleration_limits']
+max_current = port_config['max_current']
+linearity = port_config['linearity']
 
-config = []
-config += list(struct.pack("<h", port_config['encoder_resolution']))
-config += list(struct.pack("<{}".format("f" * 5), posP, posI, posD, speedLowerLimit, speedUpperLimit))
-config += list(struct.pack("<{}".format("f" * 5), speedP, speedI, speedD, powerLowerLimit, powerUpperLimit))
-config += list(struct.pack("<ff", decMax, accMax))
+config = [
+            *struct.pack("<f", resolution),
+            *struct.pack("<5f", posP, posI, posD, speedLowerLimit, speedUpperLimit),
+            *struct.pack("<5f", speedP, speedI, speedD, powerLowerLimit, powerUpperLimit),
+            *struct.pack("<ff", decMax, accMax),
+            *struct.pack("<f", max_current)
+        ]
+for x, y in linearity.items():
+            config += struct.pack('<ff', x, y)
 
 drivetrainMotors = [1, 1, 1, 2, 2, 2]  # set all to drivetrain LEFT = 1, RIGHT = 2
 
@@ -61,7 +71,7 @@ rearLeftSpeed, rearRightSpeed, rearLastLeftSpeed, rearLastRightSpeed = 0, 0, 0, 
 lastReadTime = 0
 
 
-motorPortData = {"raw":[],"pos":0, "speed":0, "power":0, "pos_reached":0}
+motorPortData = {"raw":[],"pos":0, "speed":0, "power":0, "status":0}
 sensorPortData = {"raw":[]}
 batteryData = {"raw":[],"brain":0,"motor":0}
 accelerometerData = {"raw":[],"x":0,"y":0,"z":0}
@@ -76,13 +86,29 @@ orientation = {"roll":0, "pitch":0, "yaw":0, "roll_deg":0, "pitch_deg":0, "yaw_d
 
 quaternion = numpy.empty((4, ), dtype=numpy.float64)
 
+init_flag = True
+yaw_init = 0
+
+def motor_port_control_command(port_idx, *command_data):
+    header = ((len(command_data) << 3) & 0xF8) | port_idx
+
+    return (header, *command_data)
+
+def dc_motor_speed_request(port_idx, speed, power_limit=None):
+    if power_limit is None:
+        control = struct.pack("<f", speed)
+    else:
+        control = struct.pack("<ff", speed, power_limit)
+
+    return motor_port_control_command(port_idx, 1, *control)
+
 def processMotorData(slot):
     raw = sensorData[slot]["raw"]
     if len(raw) == 9:
         (power, pos, speed) = struct.unpack('<blf', bytearray(raw))
         pos_reached = None
     elif len(raw) == 10:
-        (power, pos, speed, pos_reached) = struct.unpack('<blfb', bytearray(raw))
+        (status, power, pos, speed) = struct.unpack('<bblf', bytearray(raw))
     else:
         print('Slot {}: Received {} bytes of data instead of 9 or 10'.format(slot, len(raw)))
         return
@@ -90,7 +116,7 @@ def processMotorData(slot):
     sensorData[slot]["pos"] = pos
     sensorData[slot]["speed"] = speed
     sensorData[slot]["power"] = power
-    sensorData[slot]["pos_reached"] = pos_reached
+    sensorData[slot]["status"] = status
 
 def processIMUData(slot,lsb_value):
     raw = sensorData[slot]["raw"]
@@ -100,10 +126,16 @@ def processIMUData(slot,lsb_value):
     sensorData[slot]["z"] = z * lsb_value
 
 def processYawData(slot):
+    global init_flag, yaw_init
+
     raw = sensorData[slot]["raw"]
     (absVal, relVal) = struct.unpack('<ll', bytes(raw))
     sensorData[slot]["abs"] = absVal
     sensorData[slot]["rel"] = relVal
+
+    #if init_flag == True:
+        #init_flag = False
+        #yaw_init = absVal % 360
 
 def processSensorData(data):
     idx = 0
@@ -121,10 +153,13 @@ def processSensorData(data):
             elif slot == 10:
                 sensorData[slot]["brain"] = sensorData[slot]["raw"][1]
                 sensorData[slot]["motor"] = sensorData[slot]["raw"][3]
+            # accelerometer
             elif slot == 11:
                 processIMUData(slot, 0.061*0.00981)
+            # gyro data
             elif slot == 12:
-                processIMUData(slot, 0.035*degrees2rad)
+                processIMUData(slot, 0.035*1.03*degrees2rad)
+            # internal orientation estimator
             elif slot == 13:
                 processYawData(slot)
 
@@ -161,53 +196,60 @@ def quaternion_from_euler(ai, aj, ak):
     return quaternion
 
 def calculateOrentation():
+    global init_flag, yaw_init
+
     yaw = yawData["abs"] % 360
-    if yaw > 180.0:
-        yaw = yaw - 360.0
-    if yaw < -180.0:
-        yaw = yaw + 360.0
+    
+    #if yaw > 360.0:
+    #    yaw = yaw - 720.0
+    #if yaw < -360.0:
+    #    yaw = yaw + 720.0
+
+    #print(yawData["abs"], yaw)
 
     orientation["yaw_deg"] = yaw
     orientation["yaw"] = yaw * degrees2rad
 
-    normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]));
+    normalAcc = math.sqrt((accelerometerData["x"] * accelerometerData["x"]) + (accelerometerData["y"] * accelerometerData["y"]) + (accelerometerData["z"] * accelerometerData["z"]))
 
     if normalAcc == 0:
         return
 
-    sinRoll = accelerometerData["y"] / normalAcc;
-    cosRoll = math.sqrt(1.0 - (sinRoll * sinRoll));
-    sinPitch = accelerometerData["x"] / normalAcc;
-    cosPitch = math.sqrt(1.0 - (sinPitch * sinPitch));
+    sinRoll = accelerometerData["y"] / normalAcc
+    cosRoll = math.sqrt(1.0 - (sinRoll * sinRoll))
+    sinPitch = accelerometerData["x"] / normalAcc
+    cosPitch = math.sqrt(1.0 - (sinPitch * sinPitch))
 
-    if (sinRoll > 0):
-        if (cosRoll > 0):
-            roll = math.acos(cosRoll) * 180 / math.pi;
+    if (sinRoll >= 0):
+        if (cosRoll >= 0):
+            roll = math.acos(cosRoll) * 180 / math.pi
         else:
-            roll = math.acos(cosRoll) * 180 / math.pi + 180;
+            roll = math.acos(cosRoll) * 180 / math.pi + 180
     else:
-        if (cosRoll > 0):
-            roll = math.acos(cosRoll) * 180 / math.pi + 360;
+        if (cosRoll >= 0):
+            roll = math.acos(cosRoll) * 180 / math.pi + 360
         else:
-            roll = math.acos(cosRoll) * 180 / math.pi + 180;
+            roll = math.acos(cosRoll) * 180 / math.pi + 180
 
-    if (sinPitch > 0):
-        if (cosPitch > 0):
-            pitch = math.acos(cosPitch) * 180 / math.pi;
+    if (sinPitch >= 0):
+        if (cosPitch >= 0):
+            pitch = math.acos(cosPitch) * 180 / math.pi
         else:
-            pitch = math.acos(cosPitch) * 180 / math.pi + 180;
+            pitch = math.acos(cosPitch) * 180 / math.pi + 180
 
     else:
-        if (cosPitch > 0):
-            pitch = math.acos(cosPitch) * 180 / math.pi + 360;
+        if (cosPitch >= 0):
+            pitch = math.acos(cosPitch) * 180 / math.pi + 360
         else:
-            pitch = math.acos(cosPitch) * 180 / math.pi + 180;
+            pitch = math.acos(cosPitch) * 180 / math.pi + 180
 
-    if (roll >= 360):
-        roll = 360 - roll;
-    if (pitch >= 360):
-        pitch = 360 - pitch;
+    
+    if (roll > 360):
+        roll = 360 - roll
+    if (pitch > 360):
+        pitch = 360 - pitch
     pitch *= -1
+    
 
     orientation["roll_deg"] = roll
     orientation["roll"] = roll * degrees2rad
@@ -226,16 +268,10 @@ def robotCommThread():
     processSensorData(data)
 
     if frontLeftSpeed != frontLastLeftSpeed or frontRightSpeed != frontLastRightSpeed or rearLeftSpeed != rearLastLeftSpeed or rearRightSpeed != rearLastRightSpeed:
-        # robot_control.set_drivetrain_speed(leftSpeed, rightSpeed)
-        control = list(struct.pack("<f", rearLeftSpeed))
-        robot_control.set_motor_port_control_value(1, [1] + control)
-        control = list(struct.pack("<f", frontLeftSpeed))
-        robot_control.set_motor_port_control_value(2, [1] + control)
-        control = list(struct.pack("<f", rearRightSpeed))
-        robot_control.set_motor_port_control_value(4, [1] + control)
-        control = list(struct.pack("<f", frontRightSpeed))
-        robot_control.set_motor_port_control_value(5, [1] + control)
-        
+        robot_control.set_motor_port_control_value(dc_motor_speed_request(0, rearLeftSpeed))
+        robot_control.set_motor_port_control_value(dc_motor_speed_request(1, frontLeftSpeed))
+        robot_control.set_motor_port_control_value(dc_motor_speed_request(3, rearRightSpeed))
+        robot_control.set_motor_port_control_value(dc_motor_speed_request(4, frontRightSpeed))
         
         frontLastLeftSpeed = frontLeftSpeed
         frontLastRightSpeed = frontRightSpeed
@@ -270,7 +306,7 @@ def robotCommThread():
     imuMsg.orientation.z = q[2]
     imuMsg.orientation.w = q[3]
     imuMsg.header.stamp= rospy.Time.now()
-    imuMsg.header.frame_id = 'base_link'
+    imuMsg.header.frame_id = 'imu_link'
     imuMsg.header.seq = seq
     seq = seq + 1
     pubImu.publish(imuMsg)
@@ -284,10 +320,10 @@ def setSpeeds(data):
     global frontLeftSpeed, frontRightSpeed, rearLeftSpeed, rearRightSpeed
 
     try:
-        frontLeftSpeed = -data.data[0]
-        frontRightSpeed = data.data[1]
-        rearLeftSpeed = -data.data[2]
-        rearRightSpeed = data.data[3]
+        frontLeftSpeed = -data.data[0]/4.878
+        frontRightSpeed = data.data[1]/4.878
+        rearLeftSpeed = -data.data[2]/4.878
+        rearRightSpeed = data.data[3]/4.878
 
     except rospy.ROSInterruptException:
         pass
@@ -295,7 +331,7 @@ def setSpeeds(data):
 
 
 pubTicks = rospy.Publisher('wheel_ticks', Int16MultiArray, queue_size=1)
-pubImu = rospy.Publisher('imu_data', Imu, queue_size=1)
+pubImu = rospy.Publisher('imu_revvy', Imu, queue_size=1)
 pubOrientation = rospy.Publisher('orientation_deg', Int16MultiArray, queue_size=1)
 array_to_send = Int16MultiArray()
 
@@ -362,7 +398,7 @@ with RevvyTransportI2C() as transport:
     robot_control.status_updater_control(12, True) # gyro
     robot_control.status_updater_control(13, True) # yaw data
 
-    i2cThread = periodic(robotCommThread, 0.05, "Comm")  # 50ms
+    i2cThread = periodic(robotCommThread, 0.02, "Comm")  # 50ms
     i2cThread.start()
 
     # pubThread = periodic(publisherThread, 0.05, "Pub")
